@@ -1,5 +1,5 @@
 from typing import Dict, List
-from roulette import Roulette
+from games.roulette import Roulette
 
 roleta = Roulette.newRoulette()
 

@@ -21,6 +21,9 @@ class Roulette:
   
     
     def playColor(self, colorBet: Literal["red", "black"], betAmount: float):
+        if colorBet != "red" and colorBet != "black":
+            raise Exception("Not a valid color: only red or black")
+        
         if not isinstance(betAmount, float):
             try:
                 betAmount = float(betAmount)
@@ -40,7 +43,18 @@ class Roulette:
     def playNumber(self, 
                    numberBet: Literal[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36],
                    betAmount: float):
+        
+        if not isinstance(numberBet, int):
+            try:
+                numberBet = int(numberBet)
+            except:
+                raise Exception("Error trying to convert number to int!")
+        
+        if numberBet not in range(0, 37):
+            raise Exception("Invalid number!")
+        
         if not isinstance(betAmount, float):
+            print(betAmount)
             try:
                 betAmount = float(betAmount)
             except:
