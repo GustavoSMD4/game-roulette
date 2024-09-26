@@ -1,3 +1,4 @@
 flask
 flask-cors
 db-sqlite3
+tkinter
