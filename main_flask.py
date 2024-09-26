@@ -37,8 +37,6 @@ def playRouletteUrlParams():
         bet = request.args.get("bet")
         betAmount = request.args.get("betAmount")
         
-        print(type, bet, betAmount)
-        
         if type not in ["number", "color"]:
             raise Exception("Types only color or number")
 

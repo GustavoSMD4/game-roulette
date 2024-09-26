@@ -54,7 +54,6 @@ class Roulette:
             raise Exception("Invalid number!")
         
         if not isinstance(betAmount, float):
-            print(betAmount)
             try:
                 betAmount = float(betAmount)
             except:
