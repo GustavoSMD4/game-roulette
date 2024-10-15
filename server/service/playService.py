@@ -13,6 +13,12 @@ class PlayService:
     
     def play(self, usuario, bet, betAmount, type):
         
+        if betAmount < 1:
+            return jsonify({"error": "Aposta mínima é 1"}), 400
+        
+        if not isinstance(betAmount, int):
+            return jsonify({"error": "Valor da aposta só pode ser números inteiros!"}), 400
+        
         usuarioConsultado = self.__usuarioRepository.consultarPorUsuario(usuario)
         
         if usuarioConsultado.getSaldo() < betAmount:
@@ -22,13 +28,25 @@ class PlayService:
             raise Exception("Types only color or number")
 
         if type == "number":
-            return jsonify(Roulette.newRoulette().playNumber(bet, betAmount)), 200
+            return jsonify(self.__alterarSaldoJogadorAposJogada(Roulette.newRoulette().playNumber(bet, betAmount), usuario, betAmount)), 200
 
         if type == "color":
-            return jsonify(Roulette.newRoulette().playColor(bet, betAmount)), 200
+            return jsonify(self.__alterarSaldoJogadorAposJogada(Roulette.newRoulette().playColor(bet, betAmount), usuario, betAmount)), 200
 
         
+    def __alterarSaldoJogadorAposJogada(self, resultado: dict, nomeUsuario: str, valorAposta: float):
+        usuario = self.__usuarioRepository.consultarPorUsuario(nomeUsuario)
         
+        novoSaldo = usuario.getSaldo() - valorAposta
+        
+        if resultado.get("message") == "You won":
+            novoSaldo += resultado.get("amount")
+            
+        usuario.setSaldo(novoSaldo)
+        self.__usuarioRepository.update(usuario)
+        
+        return resultado
+    
         
         
         

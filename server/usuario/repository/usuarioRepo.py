@@ -27,8 +27,8 @@ class UsuarioRepo:
         return Usuario.usuario(dados[0])
     
     def create(self, usuarioCreate: Usuario):
-        self.__cursor.execute("INSERT INTO USUARIOS (USUARIO, SENHA, SALDO) VALUES(?, ?, ?)",
-                              (usuarioCreate.getUsuario(), usuarioCreate.getSenha(), usuarioCreate.getSaldo()))
+        self.__cursor.execute("INSERT INTO USUARIOS (USUARIO, SENHA, SALDO) VALUES(?, ?, 0)",
+                              (usuarioCreate.getUsuario(), usuarioCreate.getSenha()))
         
         self.__conn.commit()
         
