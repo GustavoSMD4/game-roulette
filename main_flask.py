@@ -32,7 +32,7 @@ def playRouletteUrlParams():
         usuario = request.args.get("usuario")
         type = request.args.get("type", type=str)
         bet = request.args.get("bet")
-        betAmount = request.args.get("betAmount", type=float)
+        betAmount = request.args.get("betAmount", type=int)
         
         return PlayService.playService().play(usuario, bet, betAmount, type)
         
