@@ -18,6 +18,18 @@ class UsuarioController:
             except Exception as e:
                 return jsonify({"error": str(e)}), 400
             
+        @self.app.route("/login")
+        def login():
+            try:
+                usuario = request.json.get("usuario")
+                senha = request.json.get("senha")
+                dados = self.__repository.login(usuario, senha)
+                return jsonify({"usuario": dados}), 200
+            
+            except Exception as e:
+                return jsonify({"error": str(e)}), 400
+                
+            
         @self.app.route("/usuario/create", methods=["POST"])
         def createUsuario():
             try:

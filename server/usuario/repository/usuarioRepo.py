@@ -26,6 +26,10 @@ class UsuarioRepo:
         dados = self.__formatar()
         return Usuario.usuario(dados[0])
     
+    def login(self, usuario, senha):
+        self.__cursor.execute("SELECT * FROM USUARIOS WHERE USUARIO = ? AND SENHA = ?", (usuario, senha))
+        return self.__formatar()
+    
     def create(self, usuarioCreate: Usuario):
         self.__cursor.execute("INSERT INTO USUARIOS (USUARIO, SENHA, SALDO) VALUES(?, ?, 0)",
                               (usuarioCreate.getUsuario(), usuarioCreate.getSenha()))
