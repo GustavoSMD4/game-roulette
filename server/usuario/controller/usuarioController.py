@@ -18,7 +18,7 @@ class UsuarioController:
             except Exception as e:
                 return jsonify({"error": str(e)}), 400
             
-        @self.app.route("/login")
+        @self.app.route("/login", methods=["POST"])
         def login():
             try:
                 usuario = request.json.get("usuario")
