@@ -37,12 +37,7 @@ class UsuarioController:
         def updateUsuario():
             try:
                 req: dict = request.json
-                
-                if req.get("id") is None or req.get("id") == "":
-                    return jsonify({"error": "Id vazio!", "code": 400}), 400
-                
                 usuarioUpdate = Usuario.usuario()
-                usuarioUpdate.setId(req.get("id"))
                 usuarioUpdate.setUsuario(req.get("usuario"))
                 usuarioUpdate.setSenha(req.get("senha"))
                 usuarioUpdate.setSaldo(req.get("saldo"))

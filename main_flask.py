@@ -12,6 +12,14 @@ CORS(app)
 def home():
     return render_template("main.html")
 
+@app.route("/criarconta")
+def criarConta():
+    return render_template("criarConta.html")
+
+@app.route("/depositar")
+def depositar():
+    return render_template("depositar.html")
+
 @app.route("/roulette", methods=["POST"])
 def playRoulette():
     try:

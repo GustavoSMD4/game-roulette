@@ -10,6 +10,7 @@
             background-color: #f4f4f4;
             margin: 0;
             padding: 20px;
+            position: relative; /* Para posicionamento do menu */
         }
         h1 {
             color: #333;
@@ -25,7 +26,7 @@
             padding: 15px;
             margin-top: 20px;
         }
-        input, button {
+        input, button, select {
             margin: 5px 0;
             padding: 10px;
             width: 100%;
@@ -38,6 +39,35 @@
             border-radius: 5px;
             padding: 15px;
         }
+        .menu-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px;
+            background: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .menu {
+            display: none;
+            position: absolute;
+            top: 50px;
+            right: 20px;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            z-index: 1000; /* Para garantir que fique acima de outros elementos */
+        }
+        .menu-item {
+            padding: 10px 15px;
+            cursor: pointer;
+        }
+        .menu-item:hover {
+            background: #f0f0f0;
+        }
     </style>
 </head>
 <body>
@@ -45,18 +75,30 @@
     <h1>Bem-vindo ao Jogo de Roleta!</h1>
     <p>No nosso jogo de roleta, você pode apostar em números de 0 a 36 e nas cores red (vermelho) e black (preto).</p>
 
+    <button class="menu-button" onclick="toggleMenu()">Menu</button>
+    <div class="menu" id="menu">
+        <div class="menu-item" onclick="criarConta()">Criar Conta</div>
+        <div class="menu-item" onclick="depositar()">Depositar</div>
+    </div>
+
     <div class="bet-instructions">
         <h2>Como Apostar:</h2>
         <form id="betForm">
             <label for="usuario">Usuário:</label>
             <input type="text" id="usuario" required>
             
-            <label for="type">Tipo de Aposta (color/number):</label>
-            <input type="text" id="type" required>
-            
-            <label for="bet">Aposta (red/número):</label>
-            <input type="text" id="bet" required>
-            
+            <label for="type">Tipo de Aposta:</label>
+            <select id="type" required>
+                <option value="">Selecione</option>
+                <option value="color">Cor</option>
+                <option value="number">Número</option>
+            </select>
+
+            <label for="bet">Aposta:</label>
+            <select id="bet" required>
+                <option value="">Selecione</option>
+            </select>
+
             <label for="betAmount">Valor da Aposta:</label>
             <input type="number" id="betAmount" required>
             
@@ -67,12 +109,29 @@
     <div id="result"></div>
 
     <script>
+        const betTypeSelect = document.getElementById('type');
+        const betSelect = document.getElementById('bet');
+
+        betTypeSelect.addEventListener('change', function() {
+            betSelect.innerHTML = ''; // Limpa opções anteriores
+            if (this.value === 'color') {
+                betSelect.innerHTML = `
+                    <option value="red">Red</option>
+                    <option value="black">Black</option>
+                `;
+            } else if (this.value === 'number') {
+                for (let i = 0; i <= 36; i++) {
+                    betSelect.innerHTML += `<option value="${i}">${i}</option>`;
+                }
+            }
+        });
+
         document.getElementById('betForm').addEventListener('submit', function(event) {
             event.preventDefault();
 
             const usuario = document.getElementById('usuario').value;
-            const type = document.getElementById('type').value;
-            const bet = document.getElementById('bet').value;
+            const type = betTypeSelect.value;
+            const bet = betSelect.value;
             const betAmount = document.getElementById('betAmount').value;
 
             const url = `https://gustavosmd4gamble.pythonanywhere.com/roulette?usuario=${usuario}&type=${type}&bet=${bet}&betAmount=${betAmount}`;
@@ -86,6 +145,27 @@
                     document.getElementById('result').innerHTML = `<p style="color: red;">Erro: ${error.message}</p>`;
                 });
         });
+
+        function toggleMenu() {
+            const menu = document.getElementById('menu');
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function criarConta() {
+            window.location.href = 'https://gustavosmd4gamble.pythonanywhere.com/criarconta';
+        }
+
+        function depositar() {
+            window.location.href = 'https://gustavosmd4gamble.pythonanywhere.com/depositar';
+        }
+
+        // Fecha o menu se clicar fora dele
+        window.onclick = function(event) {
+            const menu = document.getElementById('menu');
+            if (!event.target.matches('.menu-button') && menu.style.display === 'block') {
+                menu.style.display = 'none';
+            }
+        }
     </script>
 
 </body>

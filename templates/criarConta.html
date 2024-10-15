@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criar Conta</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh; /* Centraliza verticalmente */
+            position: relative; /* Para o posicionamento da seta */
+        }
+        .container {
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            text-align: left; /* Para alinhar os rótulos à esquerda */
+        }
+        input {
+            margin: 10px 0;
+            padding: 10px;
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #message {
+            margin-top: 20px;
+            color: red;
+            text-align: center;
+        }
+        .back-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            color: #007BFF; /* Cor da seta */
+        }
+    </style>
+</head>
+<body>
+
+    <button class="back-button" onclick="window.location.href='https://gustavosmd4gamble.pythonanywhere.com'">&#8592;</button> <!-- Setinha para voltar -->
+    
+    <div class="container">
+        <h1>Criar Conta</h1>
+        <form id="createUserForm">
+            <label for="usuario">Usuário:</label>
+            <input type="text" id="usuario" required>
+
+            <label for="senha">Senha:</label>
+            <input type="password" id="senha" required>
+
+            <button type="submit">Criar Conta</button>
+        </form>
+
+        <div id="message"></div>
+    </div>
+
+    <script>
+        document.getElementById('createUserForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const usuario = document.getElementById('usuario').value;
+            const senha = document.getElementById('senha').value;
+
+            const data = {
+                usuario: usuario,
+                senha: senha,
+                saldo: 0
+            };
+
+            fetch('https://gustavosmd4gamble.pythonanywhere.com/usuario/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao criar conta. Tente novamente.');
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('message').innerHTML = `<p style="color: green;">Conta criada com sucesso!</p>`;
+                // Limpar o formulário
+                document.getElementById('createUserForm').reset();
+            })
+            .catch(error => {
+                document.getElementById('message').innerHTML = `<p>${error.message}</p>`;
+            });
+        });
+    </script>
+
+</body>
+</html>

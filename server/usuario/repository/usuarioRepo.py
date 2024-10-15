@@ -35,12 +35,10 @@ class UsuarioRepo:
         return self.consultarTodos()
     
     def update(self, usuarioUpdate: Usuario):
-        if usuarioUpdate.getId() is None or usuarioUpdate.getId() == "":
-            return jsonify({"error": "id vazio"}), 400
+        usuario = self.consultarPorUsuario(usuarioUpdate.getUsuario())
         
-        self.consultaPorId(usuarioUpdate.getId())
         self.__cursor.execute("UPDATE USUARIOS SET USUARIO = ?, SENHA = ?, SALDO = ? WHERE ID = ?", 
-                              (usuarioUpdate.getUsuario(), usuarioUpdate.getSenha(), usuarioUpdate.getSaldo(), usuarioUpdate.getId()))
+                              (usuario.getUsuario(), usuario.getSenha(), usuarioUpdate.getSaldo(), usuario.getId()))
 
         self.__conn.commit()
         
