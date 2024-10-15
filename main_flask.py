@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
 
 from server.games.roulette import Roulette
@@ -10,7 +10,7 @@ CORS(app)
 
 @app.route("/")
 def home():
-    return "Temos roleta"
+    return render_template("main.html")
 
 @app.route("/roulette", methods=["POST"])
 def playRoulette():

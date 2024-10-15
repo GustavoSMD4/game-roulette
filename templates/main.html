@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo de Roleta</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        p {
+            font-size: 18px;
+            line-height: 1.6;
+        }
+        .bet-instructions {
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        input, button {
+            margin: 5px 0;
+            padding: 10px;
+            width: 100%;
+            max-width: 300px;
+        }
+        #result {
+            margin-top: 20px;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Bem-vindo ao Jogo de Roleta!</h1>
+    <p>No nosso jogo de roleta, você pode apostar em números de 0 a 36 e nas cores red (vermelho) e black (preto).</p>
+
+    <div class="bet-instructions">
+        <h2>Como Apostar:</h2>
+        <form id="betForm">
+            <label for="usuario">Usuário:</label>
+            <input type="text" id="usuario" required>
+            
+            <label for="type">Tipo de Aposta (color/number):</label>
+            <input type="text" id="type" required>
+            
+            <label for="bet">Aposta (red/número):</label>
+            <input type="text" id="bet" required>
+            
+            <label for="betAmount">Valor da Aposta:</label>
+            <input type="number" id="betAmount" required>
+            
+            <button type="submit">Jogar</button>
+        </form>
+    </div>
+
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('betForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const usuario = document.getElementById('usuario').value;
+            const type = document.getElementById('type').value;
+            const bet = document.getElementById('bet').value;
+            const betAmount = document.getElementById('betAmount').value;
+
+            const url = `https://gustavosmd4gamble.pythonanywhere.com/roulette?usuario=${usuario}&type=${type}&bet=${bet}&betAmount=${betAmount}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('result').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                })
+                .catch(error => {
+                    document.getElementById('result').innerHTML = `<p style="color: red;">Erro: ${error.message}</p>`;
+                });
+        });
+    </script>
+
+</body>
+</html>
