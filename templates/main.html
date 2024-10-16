@@ -169,7 +169,7 @@
             };
 
             // Envie a solicitação de login como JSON
-            fetch('https://gustavosmd4gamble.pythonanywhere.com/login', {
+            fetch('http://127.0.0.1:5000/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -204,17 +204,23 @@
             const bet = betSelect.value;
             const betAmount = parseInt(document.getElementById('betAmount').value); // Converte para inteiro
 
-            const url = `https://gustavosmd4gamble.pythonanywhere.com/roulette?usuario=${usuario}&type=${type}&bet=${bet}&betAmount=${betAmount}`;
+            const url = `http://127.0.0.1:5000/roulette?usuario=${usuario}&type=${type}&bet=${bet}&betAmount=${betAmount}`;
 
             fetch(url)
                 .then(response => response.json())
                 .then(data => {
-                    // Exibir o resultado da jogada
-                    document.getElementById('result').innerHTML = `<pre>${JSON.stringify(data.resultado, null, 2)}</pre>`;
+                    // Verifique se há um erro na resposta
+                    if (data.error) {
+                        // Exiba a mensagem de erro se existir
+                        document.getElementById('result').innerHTML = `<p style="color: red;">Erro: ${data.error}</p>`;
+                    } else {
+                        // Exibir o resultado da jogada
+                        document.getElementById('result').innerHTML = `<pre>${JSON.stringify(data.resultado, null, 2)}</pre>`;
 
-                    // Atualizar o saldo do usuário
-                    if (data.usuario && data.usuario.saldo !== undefined) {
-                        document.getElementById('balance').innerText = `Saldo: R$ ${data.usuario.saldo.toFixed(2)}`;
+                        // Atualizar o saldo do usuário
+                        if (data.usuario && data.usuario.saldo !== undefined) {
+                            document.getElementById('balance').innerText = `Saldo: R$ ${data.usuario.saldo.toFixed(2)}`;
+                        }
                     }
                 })
                 .catch(error => {
@@ -228,11 +234,11 @@
         }
 
         function criarConta() {
-            window.location.href = 'https://gustavosmd4gamble.pythonanywhere.com/criarconta';
+            window.location.href = 'http://127.0.0.1:5000/criarconta';
         }
 
         function depositar() {
-            window.location.href = 'https://gustavosmd4gamble.pythonanywhere.com/depositar';
+            window.location.href = 'http://127.0.0.1:5000/depositar';
         }
 
         // Fecha o menu se clicar fora dele

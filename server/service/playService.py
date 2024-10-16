@@ -22,14 +22,14 @@ class PlayService:
         usuarioConsultado = self.__usuarioRepository.consultarPorUsuario(usuario)
         
         if usuarioConsultado.getSaldo() < betAmount:
-            return jsonify({"error": "Usuário não tem saldo suficiente para realizar essa aposta!"}), 400
+            raise Exception("Usuário não tem saldo suficiente para realizar essa aposta!")
         
         if type not in ["number", "color"]:
             raise Exception("Types only color or number")
 
         if type == "number":
             resultado, usuarioAtualizado = self.__alterarSaldoJogadorAposJogada(Roulette.newRoulette().playNumber(bet, betAmount), usuario, betAmount)
-            return jsonify({"resultado": resultado, "usuario": usuarioAtualizado}), 200
+            return jsonify({"resultado": resultado, "usuario": usuarioAtualizado.getDictUsuario()}), 200
 
         if type == "color":
             resultado, usuarioAtualizado = self.__alterarSaldoJogadorAposJogada(Roulette.newRoulette().playColor(bet, betAmount), usuario, betAmount)
