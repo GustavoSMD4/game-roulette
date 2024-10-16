@@ -202,14 +202,20 @@
             const usuario = document.getElementById('loginUsuario').value; // Mantenha o usuário logado
             const type = betTypeSelect.value;
             const bet = betSelect.value;
-            const betAmount = document.getElementById('betAmount').value;
+            const betAmount = parseInt(document.getElementById('betAmount').value); // Converte para inteiro
 
             const url = `http://127.0.0.1:5000/roulette?usuario=${usuario}&type=${type}&bet=${bet}&betAmount=${betAmount}`;
 
             fetch(url)
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('result').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    // Exibir o resultado da jogada
+                    document.getElementById('result').innerHTML = `<pre>${JSON.stringify(data.resultado, null, 2)}</pre>`;
+
+                    // Atualizar o saldo do usuário
+                    if (data.usuario && data.usuario.saldo !== undefined) {
+                        document.getElementById('balance').innerText = `Saldo: R$ ${data.usuario.saldo.toFixed(2)}`;
+                    }
                 })
                 .catch(error => {
                     document.getElementById('result').innerHTML = `<p style="color: red;">Erro: ${error.message}</p>`;

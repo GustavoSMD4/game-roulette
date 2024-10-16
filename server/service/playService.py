@@ -28,10 +28,12 @@ class PlayService:
             raise Exception("Types only color or number")
 
         if type == "number":
-            return jsonify(self.__alterarSaldoJogadorAposJogada(Roulette.newRoulette().playNumber(bet, betAmount), usuario, betAmount)), 200
+            resultado, usuarioAtualizado = self.__alterarSaldoJogadorAposJogada(Roulette.newRoulette().playNumber(bet, betAmount), usuario, betAmount)
+            return jsonify({"resultado": resultado, "usuario": usuarioAtualizado}), 200
 
         if type == "color":
-            return jsonify(self.__alterarSaldoJogadorAposJogada(Roulette.newRoulette().playColor(bet, betAmount), usuario, betAmount)), 200
+            resultado, usuarioAtualizado = self.__alterarSaldoJogadorAposJogada(Roulette.newRoulette().playColor(bet, betAmount), usuario, betAmount)
+            return jsonify({"resultado": resultado, "usuario": usuarioAtualizado.getDictUsuario()}), 200
 
         
     def __alterarSaldoJogadorAposJogada(self, resultado: dict, nomeUsuario: str, valorAposta: float):
@@ -45,7 +47,7 @@ class PlayService:
         usuario.setSaldo(novoSaldo)
         self.__usuarioRepository.update(usuario)
         
-        return resultado
+        return resultado, usuario
     
         
         
