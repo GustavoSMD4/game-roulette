@@ -169,7 +169,7 @@
             };
 
             // Envie a solicitação de login como JSON
-            fetch('http://127.0.0.1:5000/login', {
+            fetch('https://gustavosmd4gamble.pythonanywhere.com/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -204,7 +204,7 @@
             const bet = betSelect.value;
             const betAmount = parseInt(document.getElementById('betAmount').value); // Converte para inteiro
 
-            const url = `http://127.0.0.1:5000/roulette?usuario=${usuario}&type=${type}&bet=${bet}&betAmount=${betAmount}`;
+            const url = `https://gustavosmd4gamble.pythonanywhere.com/roulette?usuario=${usuario}&type=${type}&bet=${bet}&betAmount=${betAmount}`;
 
             fetch(url)
                 .then(response => response.json())
@@ -228,11 +228,11 @@
         }
 
         function criarConta() {
-            window.location.href = 'http://127.0.0.1:5000/criarconta';
+            window.location.href = 'https://gustavosmd4gamble.pythonanywhere.com/criarconta';
         }
 
         function depositar() {
-            window.location.href = 'http://127.0.0.1:5000/depositar';
+            window.location.href = 'https://gustavosmd4gamble.pythonanywhere.com/depositar';
         }
 
         // Fecha o menu se clicar fora dele
