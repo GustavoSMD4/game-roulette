@@ -2,9 +2,9 @@
 
 class Carta:
     def __init__(self, suit, rank, valor):
-        self.__suit = suit
-        self.__rank = rank
-        self.__valor = valor
+        self.__suit: str = suit
+        self.__rank: str = rank
+        self.__valor: int = valor
         
     @classmethod
     def newCarta(cls, suit, rank, valor):

@@ -1,8 +1,7 @@
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
 
-from server.games.roulette import Roulette
-from server.service.playService import PlayService
+from server.service.playRouletteService import PlayService
 from server.usuario.controller.usuarioController import UsuarioController
 
 app = Flask(__name__)

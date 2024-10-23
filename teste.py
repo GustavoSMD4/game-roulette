@@ -1,6 +1,7 @@
 from typing import Dict, List
 from classes.baralho import Baralho
 from classes.jogadorBlackjack import JogadorBlackjack
+from server.games.blackjack import Blackjack
 from server.games.roulette import Roulette
 import utils
 
@@ -40,10 +41,7 @@ def testeBaralho():
         print(carta.getRank(), carta.getSuit(), carta.getValor())
         
 def testeJogadorBlackjack():
-    baralho = Baralho.newBaralho(1)
-    jogador = JogadorBlackjack.newJogador()
-    jogador.setNomeJogador("Gustavo")
-    jogador.addCard(baralho.deal())
-    print(jogador.printCards())
+    blackjack = Blackjack.newBlackjack(["gustavo", "valdemar"])
+    blackjack.play()
 
 testeJogadorBlackjack()
