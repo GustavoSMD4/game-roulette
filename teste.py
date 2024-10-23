@@ -1,5 +1,7 @@
 from typing import Dict, List
-from games.roulette import Roulette
+from classes.baralho import Baralho
+from classes.jogadorBlackjack import JogadorBlackjack
+from server.games.roulette import Roulette
 import utils
 
 def teste():
@@ -32,5 +34,16 @@ def teste():
 
     return resultados
 
-resultados = teste()
-print(resultados, utils.formatarReal(resultados.get("won")["amount"] - resultados.get("lost")["amount"]))
+def testeBaralho():
+    baralho = Baralho.newBaralho(1)
+    for carta in baralho.getCartas():
+        print(carta.getRank(), carta.getSuit(), carta.getValor())
+        
+def testeJogadorBlackjack():
+    baralho = Baralho.newBaralho(1)
+    jogador = JogadorBlackjack.newJogador()
+    jogador.setNomeJogador("Gustavo")
+    jogador.addCard(baralho.deal())
+    print(jogador.printCards())
+
+testeJogadorBlackjack()

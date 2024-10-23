@@ -209,15 +209,11 @@
             fetch(url)
                 .then(response => response.json())
                 .then(data => {
-                    // Verifique se há um erro na resposta
                     if (data.error) {
-                        // Exiba a mensagem de erro se existir
                         document.getElementById('result').innerHTML = `<p style="color: red;">Erro: ${data.error}</p>`;
                     } else {
-                        // Exibir o resultado da jogada
                         document.getElementById('result').innerHTML = `<pre>${JSON.stringify(data.resultado, null, 2)}</pre>`;
 
-                        // Atualizar o saldo do usuário
                         if (data.usuario && data.usuario.saldo !== undefined) {
                             document.getElementById('balance').innerText = `Saldo: R$ ${data.usuario.saldo.toFixed(2)}`;
                         }
