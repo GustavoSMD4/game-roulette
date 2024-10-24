@@ -1,5 +1,3 @@
-
-
 from server.blackjack.models.blackjackModel import BlackjackModel
 from server.blackjack.models.jogadorBlackjackModel import JogadorBlackjackModel
 from server.blackjack.repository.blackjackRepo import BlackjackRepo
@@ -18,5 +16,6 @@ class BlackjackService:
         novoJogo = BlackjackModel.newBlackjackModel()
         self.__repository.createNovoJogo(novoJogo)
         [self.__repository.createJogador(novoJogo.getId(), JogadorBlackjackModel.newJogadorBlackjack(nome)) for nome in jogadores]
+        self.__repository.createJogador(novoJogo.getId(), JogadorBlackjackModel.newJogadorBlackjack("Dealer"))
 
         return self.__repository.consultarJogadores(novoJogo.getId())

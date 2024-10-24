@@ -19,7 +19,7 @@ class BlackjackController:
         @self.__app.route("/blackjack", methods=["POST"])
         def blackjack():
             try:
-                dados = self.__repository.consultarJogo()
+                dados = self.__repository.consultarJogo(request.json)
                 
                 return jsonify({"body": {"jogo": dados}})
             except Exception as e:

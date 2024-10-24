@@ -17,15 +17,14 @@ class BlackjackRepo:
     def newBlackjackRepo(cls):
         return cls(sqlite3.Connection(Configs.newConfigs().getCaminhoDB(), check_same_thread=False))
     
-    def consultarJogo(self, idJogo):
+    def consultarJogo(self, req: dict):
         self.__cursor.execute("""
         SELECT J.NOME, J.VALOR_MAO, CJ.RANK, CJ.SUIT FROM JOGADOR_BLACKJACK J
         INNER JOIN CARTA_JOGADOR_BLACKJACK CJ ON J.ID_JOGO = CJ.ID_JOGO
         WHERE J.ID_JOGO = ?
-        """, (idJogo, ))
+        """, (req.get("idJogo"), ))
         
         return self.__formatar()
-    
     
     def consultaJogador(self, idJogo, idJogador):
         self.__cursor.execute("""
@@ -39,6 +38,7 @@ class BlackjackRepo:
     def consultarJogadores(self, idJogo):
         self.__cursor.execute("SELECT * FROM JOGADOR_BLACKJACK WHERE ID_JOGO = ?", (idJogo, ))
         self.__conn.commit()
+        return self.__formatar()
     
     def createNovoJogo(self, jogo: BlackjackModel):
         self.__cursor.execute("INSERT INTO BLACKJACK VALUES (?)", (jogo.getId(), ))
@@ -49,7 +49,6 @@ class BlackjackRepo:
         self.__cursor.execute("INSERT INTO JOGADOR_BLACKJACK (ID_JOGO, NOME) VALUES (?, ?)", (idJogo, jogador.getNome()))
         self.__conn.commit()
     
-        
     def __formatar(self):
         headers = [desc[0].lower() for desc in self.__cursor.description]
         dadosFormatados = [dict(zip(headers, data)) for data in self.__cursor.fetchall()]
