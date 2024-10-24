@@ -1,8 +1,11 @@
 
 
 import sqlite3
+import uuid
 
 from configs.configs import Configs
+from server.blackjack.models.blackjackModel import BlackjackModel
+from server.blackjack.models.jogadorBlackjackModel import JogadorBlackjackModel
 
 
 class BlackjackRepo:
@@ -32,6 +35,19 @@ class BlackjackRepo:
         """, (idJogo, idJogador))
         
         return self.__formatar()
+    
+    def consultarJogadores(self, idJogo):
+        self.__cursor.execute("SELECT * FROM JOGADOR_BLACKJACK WHERE ID_JOGO = ?", (idJogo, ))
+        self.__conn.commit()
+    
+    def createNovoJogo(self, jogo: BlackjackModel):
+        self.__cursor.execute("INSERT INTO BLACKJACK VALUES (?)", (jogo.getId(), ))
+        self.__conn.commit()
+        return jogo.getId()
+    
+    def createJogador(self, idJogo, jogador: JogadorBlackjackModel):
+        self.__cursor.execute("INSERT INTO JOGADOR_BLACKJACK (ID_JOGO, NOME) VALUES (?, ?)", (idJogo, jogador.getNome()))
+        self.__conn.commit()
     
         
     def __formatar(self):
