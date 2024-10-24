@@ -1,5 +1,5 @@
 import sqlite3
-from flask import jsonify
+from configs.configs import Configs
 
 from server.usuario.model.usuario import Usuario
 
@@ -10,7 +10,7 @@ class UsuarioRepo:
         
     @classmethod
     def usuarioRepo(cls):
-        return cls(sqlite3.Connection("database/database.db", check_same_thread=False))
+        return cls(sqlite3.Connection(Configs.newConfigs().getCaminhoDB(), check_same_thread=False))
         
     def consultarTodos(self):
         self.__cursor.execute("SELECT * FROM USUARIOS;")

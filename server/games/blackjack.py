@@ -29,10 +29,11 @@ class Blackjack:
         self.__dealer.addCard(self.__baralho.deal())
         
         for jogador in self.__jogadores:
-            self.__dealer.printMao()
             jogador.addCard(self.__baralho.deal())
             jogador.addCard(self.__baralho.deal())
-            jogador.printMao()
+            
+        
+            
         
         
             

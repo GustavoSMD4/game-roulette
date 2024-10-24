@@ -13,6 +13,35 @@ def createTable():
 )          
                    """)
     
+    cursor.execute("""
+        CREATE TABLE BLACKJACK (
+    	ID VARCHAR(36) NOT NULL PRIMARY KEY UNIQUE
+		);
+ 	""")
+    
+    cursor.execute("""
+        CREATE TABLE JOGADOR_BLACKJACK (
+    	ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    	NOME VARCHAR(100) NOT NULL,
+    	VALOR_MAO INTEGER NOT NULL DEFAULT 0
+		);
+    """)
+    
+    cursor.execute("""
+        CREATE TABLE CARTA_JOGADOR_BLACKJACK (
+    	ID VARCHAR(36) NOT NULL PRIMARY KEY UNIQUE,
+    	ID_JOGO VARCHAR(36) NOT NULL,
+    	ID_JOGADOR INTEGER NOT NULL,
+  		RANK VARCHAR(1) NOT NULL,
+  		SUIT VARCHAR(7) NOT NULL,
+  		VALOR INTEGER NOT NULL,
+    	CONSTRAINT FK_CARTA_JOGO FOREIGN KEY (ID_JOGO) REFERENCES BLACKJACK(ID),
+    	CONSTRAINT FK_CARTA_JOGADOR FOREIGN KEY (ID_JOGADOR) REFERENCES JOGADOR_BLACKJACK(ID)
+		);   
+    """)
+
+
+cursor.execute("PRAGMA foreign_keys = ON;")    
 createTable()
 
 conn.commit()

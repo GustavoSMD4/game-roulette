@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
 
+from server.blackjack.controller.blackjackController import BlackjackController
 from server.service.playRouletteService import PlayService
 from server.usuario.controller.usuarioController import UsuarioController
 
@@ -47,6 +48,7 @@ def playRouletteUrlParams():
         return jsonify({"error": str(e)}), 400
     
 UsuarioController(app).routes()
+BlackjackController.blackjackController(app)
     
 if __name__ == "__main__":
     app.run(debug=True)
