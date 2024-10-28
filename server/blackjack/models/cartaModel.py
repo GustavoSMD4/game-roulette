@@ -20,6 +20,16 @@ class CartaJogadorBlackjackModel:
             
         return cls(id, idJogo, idJogador, rank, suit, valor)
 
+    def getDict(self):
+        return {
+            "id": self.__id,
+            "idJogo": self.__idJogo,
+            "idJogador": self.__idJogador,
+            "rank": self.__rank,
+            "suit": self.__suit,
+            "valor": self.__valor
+        }
+
     def getId(self):
         return self.__id
 

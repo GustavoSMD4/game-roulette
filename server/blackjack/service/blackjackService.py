@@ -14,8 +14,15 @@ class BlackjackService:
     def createNovoJogoBlackjack(self, req: dict):
         jogadores = req.get("jogadores")
         novoJogo = BlackjackModel.newBlackjackModel()
-        self.__repository.createNovoJogo(novoJogo)
-        [self.__repository.createJogador(novoJogo.getId(), JogadorBlackjackModel.newJogadorBlackjack(nome)) for nome in jogadores]
+        
+        for i, nomeJogador in enumerate(jogadores):
+            jogador = JogadorBlackjackModel.newJogadorBlackjack(nomeJogador)
+            
+            if i == 0:
+                novoJogo.setJogadorVez(jogador.getId())
+                self.__repository.createNovoJogo(novoJogo)
+            
+            self.__repository.createJogador(novoJogo.getId(), jogador)
+                 
         self.__repository.createJogador(novoJogo.getId(), JogadorBlackjackModel.newJogadorBlackjack("Dealer"))
-
-        return self.__repository.consultarJogadores(novoJogo.getId())
+        return novoJogo.getId()

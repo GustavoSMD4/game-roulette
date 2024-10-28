@@ -1,5 +1,8 @@
 
 
+import uuid
+
+
 class JogadorBlackjackModel:
     def __init__(self, id, nome, valorMao):
         self.__id = id
@@ -8,7 +11,17 @@ class JogadorBlackjackModel:
 
     @classmethod
     def newJogadorBlackjack(cls, nome, id = None, valorMao = 0):
+        if id is None:
+            id = str(uuid.uuid4())
+            
         return cls(id, nome, valorMao)
+
+    def getDict(self):
+        return {
+            "id": self.__id,
+            "nome": self.__nome,
+            "valorMao": self.__valorMao
+        }
 
     def getId(self):
         return self.__id

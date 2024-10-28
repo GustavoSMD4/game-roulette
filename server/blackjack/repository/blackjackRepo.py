@@ -17,21 +17,21 @@ class BlackjackRepo:
     def newBlackjackRepo(cls):
         return cls(sqlite3.Connection(Configs.newConfigs().getCaminhoDB(), check_same_thread=False))
     
-    def consultarJogo(self, req: dict):
+    def consultarJogo(self, idJogo):
         self.__cursor.execute("""
         SELECT J.NOME, J.VALOR_MAO, CJ.RANK, CJ.SUIT FROM JOGADOR_BLACKJACK J
         INNER JOIN CARTA_JOGADOR_BLACKJACK CJ ON J.ID_JOGO = CJ.ID_JOGO
         WHERE J.ID_JOGO = ?
-        """, (req.get("idJogo"), ))
+        """, (idJogo, ))
         
-        return self.__formatar()
+        return BlackjackModel.newBlackjackModel(self.__formatar()[0])
     
-    def consultaJogador(self, idJogo, idJogador):
+    def consultaJogador(self, idJogador):
         self.__cursor.execute("""
         SELECT J.NOME, J.VALOR_MAO, CJ.RANK, CJ.SUIT FROM JOGADOR_BLACKJACK J
         INNER JOIN CARTA_JOGADOR_BLACKJACK CJ ON J.ID_JOGO = CJ.ID_JOGO
-        WHERE J.ID_JOGO = ? and J.ID = ?
-        """, (idJogo, idJogador))
+        WHERE J.ID = ?
+        """, (idJogador, ))
         
         return self.__formatar()
     
@@ -41,9 +41,9 @@ class BlackjackRepo:
         return self.__formatar()
     
     def createNovoJogo(self, jogo: BlackjackModel):
-        self.__cursor.execute("INSERT INTO BLACKJACK VALUES (?)", (jogo.getId(), ))
+        self.__cursor.execute("INSERT INTO BLACKJACK VALUES (?, ?)", (jogo.getId(), jogo.getJogadorVez()))
         self.__conn.commit()
-        return jogo.getId()
+        return BlackjackModel.newBlackjackModel(self.consultarJogo(jogo.getId()))
     
     def createJogador(self, idJogo, jogador: JogadorBlackjackModel):
         self.__cursor.execute("INSERT INTO JOGADOR_BLACKJACK (ID_JOGO, NOME) VALUES (?, ?)", (idJogo, jogador.getNome()))
