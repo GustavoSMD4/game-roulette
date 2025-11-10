@@ -12,7 +12,6 @@ class PlayService:
         return cls()
     
     def play(self, usuario, bet, betAmount, type):
-        
         if betAmount < 1:
             return jsonify({"error": "Aposta mínima é 1"}), 400
         

@@ -17,7 +17,7 @@ class Usuario:
         return cls(id, req.get("usuario"), req.get("senha"), req.get("saldo"))
     
     def getDictUsuario(self):
-        return dict(id = self.__id, usuario=self.__usuario, senha=self.__senha, saldo=self.__saldo)
+        return dict(usuario=self.__usuario, saldo=self.__saldo)
 
     def getId(self):
         return self.__id

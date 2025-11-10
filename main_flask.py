@@ -1,6 +1,5 @@
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
-
 from server.blackjack.controller.blackjackController import BlackjackController
 from server.service.playRouletteService import PlayService
 from server.usuario.controller.usuarioController import UsuarioController
@@ -34,14 +33,9 @@ def playRoulette():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
     
-@app.route("/roulette")
-def playRouletteUrlParams():
+@app.route("/roulette/<usuario>/<type>/<bet>/<int:betAmount>")
+def playRouletteUrlParams(usuario, type, bet, betAmount):
     try:
-        usuario = request.args.get("usuario")
-        type = request.args.get("type", type=str)
-        bet = request.args.get("bet")
-        betAmount = request.args.get("betAmount", type=int)
-        
         return PlayService.playService().play(usuario, bet, betAmount, type)
         
     except Exception as e:
