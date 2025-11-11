@@ -1,15 +1,15 @@
-from flask import Response, jsonify
+from flask import jsonify
 from server.games.roulette import Roulette
 from server.usuario.repository.usuarioRepo import UsuarioRepo
 from server.usuario.service.usuarioService import UsuarioService
 
 
-class PlayService:
+class RouletteService:
     def __init__(self):
         self.__usuarioRepository = UsuarioRepo.newRepo()
         
     @classmethod
-    def playService(cls):
+    def newService(cls):
         return cls()
     
     def play(self, req: dict):

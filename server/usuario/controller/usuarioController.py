@@ -1,18 +1,20 @@
 from flask import Flask, jsonify, request
+from flask_limiter import Limiter
 
 from server.usuario.repository.usuarioRepo import UsuarioRepo
 from server.usuario.model.usuario import Usuario
 from server.usuario.service.usuarioService import UsuarioService
 
 class UsuarioController:
-    def __init__(self, app, repository: UsuarioRepo, usuarioService: UsuarioService):
+    def __init__(self, app, limiter: Limiter, repository: UsuarioRepo, usuarioService: UsuarioService):
         self.app = app
+        self.limiter = limiter
         self.__repository = repository
         self.__service = usuarioService
         
     @classmethod
-    def newController(cls, app: Flask):
-        return cls(app, UsuarioRepo.newRepo(), UsuarioService.newService()).routes()
+    def newController(cls, app: Flask, limiter: Limiter = None, logger = None):
+        return cls(app, limiter, UsuarioRepo.newRepo(), UsuarioService.newService()).routes()
         
     def routes(self):
         @self.app.route("/usuario")
@@ -34,6 +36,7 @@ class UsuarioController:
                 return jsonify({"error": str(e)}), 400
             
         @self.app.route("/usuario/depositar", methods=["POST"])
+        @self.limiter.limit("10 per minute")
         def depositar():
             try:
                 usuario = self.__service.depositar(request.json)

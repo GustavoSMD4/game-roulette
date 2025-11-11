@@ -1,14 +1,15 @@
 
 
 class Carta:
-    def __init__(self, suit, rank, valor):
+    def __init__(self, suit, rank, valor, nomeImagem):
         self.__suit: str = suit
         self.__rank: str = rank
         self.__valor: int = valor
+        self.__nomeImagem: str = nomeImagem
         
     @classmethod
-    def newCarta(cls, suit, rank, valor):
-        return cls(suit, rank, valor)
+    def newCarta(cls, suit, rank, valor, nomeImagem):
+        return cls(suit, rank, valor, nomeImagem)
 
     def getSuit(self):
         return self.__suit
@@ -27,3 +28,9 @@ class Carta:
 
     def setValor(self, valor):
         self.__valor = valor
+        
+    def getNomeImagem(self):
+        return self.__nomeImagem
+    
+    def setNomeImagem(self, nomeImagem: str):
+        self.__nomeImagem = nomeImagem

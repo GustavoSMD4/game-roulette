@@ -29,10 +29,8 @@ class BlackjackController:
         def createJogo():
             try:
                 idJogoCriado = self.__service.createNovoJogoBlackjack(request.json)
-                jogadores = self.__repository.consultarJogadores(idJogoCriado)
                 jogoCriado = self.__repository.consultarJogo(idJogoCriado)
                 
-                
-                return jsonify({"body": {"jogo": jogoCriado,"jogadores": jogadores}})
+                return jsonify({"body": {"jogo": jogoCriado}})
             except Exception as e:
                 return jsonify({"error": str(e)}), 400

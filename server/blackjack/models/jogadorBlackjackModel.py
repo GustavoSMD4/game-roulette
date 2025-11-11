@@ -10,10 +10,7 @@ class JogadorBlackjackModel:
         self.__valorMao = valorMao
 
     @classmethod
-    def newJogadorBlackjack(cls, nome, id = None, valorMao = 0):
-        if id is None:
-            id = str(uuid.uuid4())
-            
+    def newJogadorBlackjack(cls, nome, id = None, valorMao = 0):    
         return cls(id, nome, valorMao)
 
     def getDict(self):

@@ -1,33 +1,33 @@
-from flask import Flask, jsonify, request, render_template
+import logging
+from flask import Flask
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from server.blackjack.controller.blackjackController import BlackjackController
-from server.service.playRouletteService import PlayService
+from server.roulette.controller.rouletteController import RouletteController
 from server.usuario.controller.usuarioController import UsuarioController
 
 app = Flask(__name__)
 CORS(app)
 
-# @app.route("/")
-# def home():
-#     return render_template("main.html")
+logger = logging.getLogger('flask_app')
+fileHandler = logging.FileHandler('app.log')
+fileHandler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+fileHandler.setFormatter(formatter)
+logger.addHandler(fileHandler)
+logger.setLevel(logging.DEBUG)
 
-# @app.route("/criarconta")
-# def criarConta():
-#     return render_template("criarConta.html")
-
-# @app.route("/depositar")
-# def depositar():
-#     return render_template("depositar.html")
+limiter = Limiter(
+            app=app,
+            key_func=get_remote_address,
+            default_limits=[],
+            headers_enabled=True,
+            storage_uri="memory://"
+        )
     
-@app.route("/roulette/play", methods=["POST"])
-def playRouletteUrlParams():
-    try:
-        return PlayService.playService().play(request.json)
-        
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
-    
-UsuarioController.newController(app)
+UsuarioController.newController(app, limiter, logger)
+RouletteController.newController(app, limiter, logger)
 BlackjackController.blackjackController(app)
     
 if __name__ == "__main__":

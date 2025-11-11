@@ -1,7 +1,7 @@
 
 class Configs:
     def __init__(self):
-        self.__caminhoDB = "database/database.db"
+        self.__caminhoDB = "server/database/database.db"
         
     @classmethod
     def newConfigs(cls):
