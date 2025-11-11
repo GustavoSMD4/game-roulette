@@ -17,8 +17,14 @@ class PlayService:
         nomeUsuario = req.get("usuario")
         bet = req.get("bet")
         betAmount = req.get("bet_amount")
-        type = req.get("type")
+        type = "color"
         
+        try:
+            type = int(bet)
+            type = "number"
+        except:
+            type = "color"
+            
         usuario = UsuarioService.newService().verificarUsuario(req)
         
         if betAmount < 1:
@@ -41,6 +47,8 @@ class PlayService:
 
             mensagem = (
                 f"🎰 **Resultado da Roleta**\n"
+                f"• Aposta: **{bet}**\n"
+                f"• Valor apostado: **R$ {betAmount}**\n"
                 f"• Resultado: **{r['result']}**\n"
                 f"• Status: **{r['message']}**\n"
                 f"• Valor resultado: **R$ {valorResultado}**\n"
@@ -58,6 +66,8 @@ class PlayService:
 
             mensagem = (
                 f"🎰 **Resultado da Roleta**\n"
+                f"• Aposta: **{bet}**\n"
+                f"• Valor apostado: **R$ {betAmount}**\n"
                 f"• Resultado: **{r['result']}**\n"
                 f"• Status: **{r['message']}**\n"
                 f"• Valor resultado: **R$ {valorResultado}**\n"
