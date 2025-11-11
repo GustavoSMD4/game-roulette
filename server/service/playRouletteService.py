@@ -34,7 +34,7 @@ class PlayService:
             raise Exception("Types only color or number")
 
         if type == "number":
-            resultado, usuarioAtualizado = self.__alterarSaldoJogadorAposJogada(Roulette.newRoulette().playNumber(bet, betAmount), usuario, betAmount)
+            resultado, usuarioAtualizado = self.__alterarSaldoJogadorAposJogada(Roulette.newRoulette().playNumber(bet, betAmount), idUsuario, betAmount)
             r = resultado
             u = usuarioAtualizado.getDictUsuario()
             valorResultado = r['amount'] if r['amount'] > 0 else str(r['amount'])
