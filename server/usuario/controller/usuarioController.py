@@ -2,11 +2,17 @@ from flask import Flask, jsonify, request
 
 from server.usuario.repository.usuarioRepo import UsuarioRepo
 from server.usuario.model.usuario import Usuario
+from server.usuario.service.usuarioService import UsuarioService
 
 class UsuarioController:
-    def __init__(self, app: Flask):
+    def __init__(self, app, repository: UsuarioRepo, usuarioService: UsuarioService):
         self.app = app
-        self.__repository = UsuarioRepo.usuarioRepo()
+        self.__repository = repository
+        self.__service = usuarioService
+        
+    @classmethod
+    def newController(cls, app: Flask):
+        return cls(app, UsuarioRepo.newRepo(), UsuarioService.newService()).routes()
         
     def routes(self):
         @self.app.route("/usuario")
@@ -21,42 +27,49 @@ class UsuarioController:
         @self.app.route("/login", methods=["POST"])
         def login():
             try:
-                usuario = request.json.get("usuario")
-                senha = request.json.get("senha")
-                dados = self.__repository.login(usuario, senha)
-                return jsonify({"usuario": dados}), 200
+                usuario = self.__service.verificarUsuario(request.json)
+                return jsonify({"usuario": usuario.getDictUsuario()}), 200
+            
+            except Exception as e:
+                return jsonify({"error": str(e)}), 400
+            
+        @self.app.route("/usuario/depositar", methods=["POST"])
+        def depositar():
+            try:
+                usuario = self.__service.depositar(request.json)
+                return jsonify({"usuario": usuario.getDictUsuario()}), 200
             
             except Exception as e:
                 return jsonify({"error": str(e)}), 400
                 
             
-        @self.app.route("/usuario/create", methods=["POST"])
-        def createUsuario():
-            try:
-                req: dict = request.json
-                usuarioCreate = Usuario.usuario()
-                usuarioCreate.setUsuario(req.get("usuario"))
-                usuarioCreate.setSenha(req.get("senha"))
-                usuarioCreate.setSaldo(req.get("saldo"))
+        # @self.app.route("/usuario/create", methods=["POST"])
+        # def createUsuario():
+        #     try:
+        #         req: dict = request.json
+        #         usuarioCreate = Usuario.usuario()
+        #         usuarioCreate.setUsuario(req.get("usuario"))
+        #         usuarioCreate.setSenha(req.get("senha"))
+        #         usuarioCreate.setSaldo(req.get("saldo"))
                 
-                usuarios = self.__repository.create(usuarioCreate)
-                return jsonify({"usuarios": usuarios}), 200
+        #         usuarios = self.__repository.create(usuarioCreate)
+        #         return jsonify({"usuarios": usuarios}), 200
             
-            except Exception as e:
-                return jsonify({"error": str(e)}), 400
+        #     except Exception as e:
+        #         return jsonify({"error": str(e)}), 400
             
-        @self.app.route("/usuario/update", methods=["POST"])
-        def updateUsuario():
-            try:
-                req: dict = request.json
-                usuarioUpdate = Usuario.usuario()
-                usuarioUpdate.setUsuario(req.get("usuario"))
-                usuarioUpdate.setSenha(req.get("senha"))
-                usuarioUpdate.setSaldo(req.get("saldo"))
+        # @self.app.route("/usuario/update", methods=["POST"])
+        # def updateUsuario():
+        #     try:
+        #         req: dict = request.json
+        #         usuarioUpdate = Usuario.usuario()
+        #         usuarioUpdate.setUsuario(req.get("usuario"))
+        #         usuarioUpdate.setSenha(req.get("senha"))
+        #         usuarioUpdate.setSaldo(req.get("saldo"))
                 
-                usuarios = self.__repository.update(usuarioUpdate)
-                return jsonify({"usuarios": usuarios}), 200
+        #         usuarios = self.__repository.update(usuarioUpdate)
+        #         return jsonify({"usuarios": usuarios}), 200
             
-            except Exception as e:
-                return jsonify({"error": str(e)}), 500
+        #     except Exception as e:
+        #         return jsonify({"error": str(e)}), 500
             

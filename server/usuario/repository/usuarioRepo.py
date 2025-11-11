@@ -9,43 +9,45 @@ class UsuarioRepo:
         self.__cursor = conn.cursor()
         
     @classmethod
-    def usuarioRepo(cls):
+    def newRepo(cls):
         return cls(sqlite3.Connection(Configs.newConfigs().getCaminhoDB(), check_same_thread=False))
         
     def consultarTodos(self):
         self.__cursor.execute("SELECT * FROM USUARIOS;")
-        return self.__formatar()
+        return [Usuario.newUsuario(usuario) for usuario in self.__formatar()]
     
     def consultaPorId(self, id: int):
         self.__cursor.execute("SELECT * FROM USUARIOS WHERE ID = ?", (id, ))
         dados = self.__formatar()
-        return Usuario.usuario(dados[0])
+        
+        if len(dados) <= 0:
+            return
+        
+        return Usuario.newUsuario(dados[0])
     
     def consultarPorUsuario(self, usuario: str):
         self.__cursor.execute("SELECT * FROM USUARIOS WHERE USUARIO = ?", (usuario, ))
         dados = self.__formatar()
-        return Usuario.usuario(dados[0])
+        return Usuario.newUsuario(dados[0])
     
     def login(self, usuario, senha):
         self.__cursor.execute("SELECT * FROM USUARIOS WHERE USUARIO = ? AND SENHA = ?", (usuario, senha))
         return self.__formatar()
     
     def create(self, usuarioCreate: Usuario):
-        self.__cursor.execute("INSERT INTO USUARIOS (USUARIO, SENHA, SALDO) VALUES(?, ?, 0)",
-                              (usuarioCreate.getUsuario(), usuarioCreate.getSenha()))
+        self.__cursor.execute("INSERT INTO USUARIOS (ID,  USUARIO, SENHA, SALDO) VALUES(?, ?, ?, 0)",
+                              (usuarioCreate.getId(), usuarioCreate.getUsuario(), usuarioCreate.getSenha()))
         
         self.__conn.commit()
-        
         return self.consultarTodos()
     
     def update(self, usuarioUpdate: Usuario):
-        usuario = self.consultarPorUsuario(usuarioUpdate.getUsuario())
+        usuario = self.consultaPorId(usuarioUpdate.getId())
         
         self.__cursor.execute("UPDATE USUARIOS SET USUARIO = ?, SENHA = ?, SALDO = ? WHERE ID = ?", 
                               (usuario.getUsuario(), usuario.getSenha(), usuarioUpdate.getSaldo(), usuario.getId()))
 
         self.__conn.commit()
-        
         return self.consultarTodos()
     
     def delete(self, id: int):

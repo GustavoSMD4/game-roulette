@@ -2,19 +2,23 @@ import uuid
 
 
 class Usuario:
-    def __init__(self, id: int | str, usuario: str, senha: str, saldo: float):
-        self.__id = id
-        self.__usuario = usuario
-        self.__senha = senha
-        self.__saldo = saldo
+    def __init__(self):
+        self.__id: int = None
+        self.__usuario: str = None
+        self.__senha: str = None
+        self.__saldo: int | float = None
         
     @classmethod
-    def usuario(cls, req: dict | None = None):
+    def newUsuario(cls, req: dict | None = None):
         if req is None: 
-            return cls("", "", "", 0)
+            return cls()
         
-        id = req.get("id") if req.get("id") else str(uuid.uuid4())
-        return cls(id, req.get("usuario"), req.get("senha"), req.get("saldo"))
+        usuario = cls()
+        usuario.setId(req.get("id"))
+        usuario.setUsuario(req.get("usuario"))
+        usuario.setSenha(req.get("senha"))
+        usuario.setSaldo(req.get("saldo"))
+        return usuario
     
     def getDictUsuario(self):
         return dict(usuario=self.__usuario, saldo=self.__saldo)
