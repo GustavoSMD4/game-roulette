@@ -33,6 +33,14 @@ class UsuarioService:
             return usuario
             
     def depositar(self, req: dict):
+        valorAdicionar = req.get("saldo")
+        
+        if float(valorAdicionar) > 1000000:
+            raise Exception("Valor máximo por deposito é de 1.000.000")
+        
+        if float(valorAdicionar) <= 0:
+            raise Exception("Valor para depositar precisa ser maior que 0")
+        
         usuario = self.verificarUsuario(req)
         saldoAtual = usuario.getSaldo()
         usuario.setSaldo(req.get("saldo") + saldoAtual)

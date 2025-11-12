@@ -1,6 +1,6 @@
 import sqlite3
 
-conn = sqlite3.Connection("database/database.db", check_same_thread=False)
+conn = sqlite3.Connection("server/database/database.db", check_same_thread=False)
 cursor = conn.cursor()
 
 def createTable():
@@ -46,9 +46,11 @@ def createTable():
     cursor.execute("""
 		CREATE TABLE IF NOT EXISTS RESULTADOS_ROLETA (
 			ID_JOGADOR TEXT NOT NULL,
-			APOSTA_JOGAR TEXT NOT NULL,
+			APOSTA_JOGADOR TEXT NOT NULL,
 			VALOR_APOSTA REAL NOT NULL,
 			RESULTADO TEXT NOT NULL,
+			VALOR_RESULTADO REAL NOT NULL,
+			GANHOU INTEGER NOT NULL,
 			DATA_HORA TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 		);         
     """)
