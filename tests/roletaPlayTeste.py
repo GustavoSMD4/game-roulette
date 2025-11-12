@@ -2,6 +2,8 @@ import requests
 import sys
 import os
 sys.path.append(os.getcwd())
+from server.roulette.service.rouletteService import RouletteService
+
 
 class RoletaPlayTeste:
     def __init__(self):
@@ -31,5 +33,18 @@ class RoletaPlayTeste:
         print(response.text)
         return response
     
-RoletaPlayTeste().playEndpoint(2, "valdemar", betAmount=1000000000000)
+    def jogarTeste(self):
+        roletaService = RouletteService.newService()
+        testes = 1000000
+        i = 1
+        
+        while i < testes:
+            roletaService.play(dict(idUsuario=755962235066646569, nomeUsuario="gustavogomes6448", bet="red", bet_amount=1))
+            i += 1
+        
+        print("Acabou")
+            
+RoletaPlayTeste().jogarTeste()
+
+    
 

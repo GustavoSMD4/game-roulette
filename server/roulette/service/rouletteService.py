@@ -37,7 +37,14 @@ class RouletteService:
         dinheiroTotalApostado = sum(r.getValorAposta() or 0 for r in resultados)
 
         # Retorno total considerando ganhos e perdas
-        retornoTotalDinheiro = sum((r.getValorResultado() if r.getGanhou() == 1 else -(r.getValorResultado() or 0)) for r in resultados)
+        retornoTotalDinheiro = sum(
+            (
+                (r.getValorResultado() - r.getValorAposta())  # lucro líquido
+                if r.getGanhou() == 1
+                else -(r.getValorAposta() or 0)               # perda total da aposta
+            )
+            for r in resultados
+        )
         
         lucroTotal = round(retornoTotalDinheiro, 2)
 
@@ -50,6 +57,7 @@ class RouletteService:
             apostaPreferida = "⚫ Black"
         else:
             apostaPreferida = "⚪ Empate (Red/Black)"
+            
 
         # Formatação bonita da resposta
         stats = f"""
@@ -97,11 +105,11 @@ class RouletteService:
 
         if type == "number":
             textMensagemResultado = self.__resultadoJogada(Roulette.newRoulette().playNumber(bet, betAmount), idUsuario, str(bet), betAmount)
-            return jsonify({"mensagem": textMensagemResultado}), 200
+            return textMensagemResultado
 
         if type == "color":
-            textMensagemResultado = self.__resultadoJogada(Roulette.newRoulette().playColor(bet, betAmount), idUsuario, bet, betAmount)
-            return jsonify({"mensagem": textMensagemResultado}), 200
+            textMensagemResultado = self.__resultadoJogada(Roulette.newRoulette().playColor(bet, betAmount), idUsuario, str(bet), betAmount)
+            return textMensagemResultado
     
     def __resultadoJogada(self, resultado: dict, idUsuario: str, apostaJogador: str, valorAposta: float):
         """Altera o Saldo, registra o resultado da jogada no histórico do servidor e retorna str do resultado"""

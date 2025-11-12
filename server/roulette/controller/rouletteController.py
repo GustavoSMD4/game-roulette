@@ -19,7 +19,8 @@ class RouletteController:
         @self.limiter.limit("20 per minute")
         def playRoulette():
             try:
-                return self.__service.play(request.json)
+                textMensagemResultado = self.__service.play(request.json)
+                return jsonify({"mensagem": textMensagemResultado}), 200
                 
             except Exception as e:
                 return jsonify({"error": str(e)}), 400
