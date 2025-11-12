@@ -16,7 +16,7 @@ class RouletteController:
     
     def routes(self):
         @self.app.route("/roulette/play", methods=["POST"])
-        @self.limiter.limit("10 per minute")
+        @self.limiter.limit("20 per minute")
         def playRoulette():
             try:
                 return self.__service.play(request.json)
