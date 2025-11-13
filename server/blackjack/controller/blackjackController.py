@@ -28,8 +28,7 @@ class BlackjackController:
         @self.__app.route("/blackjack/create", methods=["POST"])
         def createJogo():
             try:
-                idJogoCriado = self.__service.createNovoJogoBlackjack(request.json)
-                jogoCriado = self.__repository.consultarJogo(idJogoCriado)
+                jogoCriado = self.__service.createNovoJogoBlackjack(request.json)
                 
                 return jsonify({"body": {"jogo": jogoCriado}})
             except Exception as e:
@@ -38,8 +37,7 @@ class BlackjackController:
         @self.__app.route("/blackjack/restate", methods=["POST"])
         def restateJogo():
             try:
-                idJogoCriado = self.__service.restateJogoBlackjack(request.json)
-                jogoCriado = self.__repository.consultarJogo(idJogoCriado)
+                jogoCriado = self.__service.restateJogoBlackjack(request.json)
                 
                 return jsonify({"body": {"jogo": jogoCriado}})
             except Exception as e:

@@ -45,3 +45,12 @@ class Carta:
     
     def setNomeImagem(self, nomeImagem: str):
         self.__nomeImagem = nomeImagem
+        
+    def getDict(self):
+        return {
+            "id": self.__id,
+            "suit": self.__suit,
+            "rank": self.__rank,
+            "valor": self.__valor,
+            "nomeImagem": self.__nomeImagem
+        }

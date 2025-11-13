@@ -1,4 +1,5 @@
 from classes.blackjack import Blackjack
+from classes.jogador import Jogador
 from server.blackjack.models.blackjackModel import BlackjackModel
 from server.blackjack.models.jogadorBlackjackModel import JogadorBlackjackModel
 from server.blackjack.repository.blackjackRepo import BlackjackRepo
@@ -15,9 +16,9 @@ class BlackjackService:
     def createNovoJogoBlackjack(self, req: dict):
         idUsuario = req.get("idUsuario")
         nomeUsuario = req.get("nomeUsuario")        
-        return Blackjack([JogadorBlackjackModel.newJogadorBlackjack(nome=nomeUsuario, id=idUsuario)]).iniciarJogo()
+        return Blackjack(Jogador.newJogador(nomeUsuario=nomeUsuario, idUsuario=idUsuario)).iniciarJogo()
     
     def restateJogoBlackjack(self, req: dict):
         idUsuario = req.get("idUsuario")
         nomeUsuario = req.get("nomeUsuario")         
-        return Blackjack([JogadorBlackjackModel.newJogadorBlackjack(nome=nomeUsuario, id=idUsuario)]).restateJogo()
+        return Blackjack(Jogador.newJogador(nomeUsuario=nomeUsuario, idUsuario=idUsuario)).restateJogo()

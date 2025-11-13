@@ -1,15 +1,17 @@
 import uuid
 
-
 class BlackjackModel:
     def __init__(self, id: str, idJogadorHost: str):
         self.__id = id
         self.__idJogadorHost = idJogadorHost
         
     @classmethod
-    def newBlackjackModel(cls, id = None, idJogadorHost = None):
-        if id is None:
-            id = str(uuid.uuid4())
+    def newBlackjackModel(cls, req: dict = None):
+        if req is None:
+            return cls(str(uuid.uuid4()), None)
+        
+        id = req.get("id") or str(uuid.uuid4())
+        idJogadorHost = req.get("idJogadorHost") or req.get("id_jogador_host") or req.get("jogador_host")
         
         return cls(id, idJogadorHost)
     

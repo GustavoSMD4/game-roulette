@@ -27,28 +27,59 @@ class Blackjack:
         carta1Jogador = self.__baralho.deal()
         carta2Jogador = self.__baralho.deal()
         cartaDealer = self.__baralho.deal()
+        
         self.__jogadorHost.addCard(carta1Jogador)
         self.__jogadorHost.addCard(carta2Jogador)
         self.__dealer.addCard(cartaDealer)
         self.__jogadores.append(self.__jogadorHost)
-        jogoCriado = self.__blackjackRepo.createNovoJogo(BlackjackModel.newBlackjackModel(idJogadorHost=self.__jogadorHost.getId()))
+        
+        jogoCriado = self.__blackjackRepo.createNovoJogo(
+            BlackjackModel.newBlackjackModel(dict(idJogadorHost=self.__jogadorHost.getId()))
+        )
         self.__idJogo = jogoCriado.getId()
-        return self
+        
+        self.__cartaJogadorRepo.createCarta(self.__idJogo, self.__jogadorHost.getId(), carta1Jogador.getId())
+        self.__cartaJogadorRepo.createCarta(self.__idJogo, self.__jogadorHost.getId(), carta2Jogador.getId())
+        self.__cartaJogadorRepo.createCarta(self.__idJogo, self.__dealer.getId(), cartaDealer.getId())
+        
+        cartasJogador = ", ".join([f"{c.getRank()} de {c.getSuit()}" for c in self.__jogadorHost.getCards()])
+        cartasDealer = ", ".join([f"{c.getRank()} de {c.getSuit()}" for c in self.__dealer.getCards()])
+        
+        retorno = (
+            f"Jogador {self.__jogadorHost.getNomeJogador()} tem: {cartasJogador} "
+            f"(valor da mão: {self.__jogadorHost.getValorMao()})\n"
+            f"Dealer tem: {cartasDealer} "
+            f"(valor da mão: {self.__dealer.getValorMao()})"
+        )
+        
+        return retorno
         
     def restateJogo(self):
         jogo = self.__blackjackRepo.consultarJogoIdJogador(self.__jogadorHost.getId())
+        self.__idJogo = jogo.getId()
         dealer = UsuarioRepo.newRepo().consultarPorUsuario("dealer")
         self.__dealer = Jogador.newJogador(dealer.getId(), "dealer")
+        
         cartasJogoJogador = self.__cartaJogadorRepo.consultarCartasJogador(jogo.getId(), jogo.getIdJogador())
         cartasDealer = self.__cartaJogadorRepo.consultarCartasJogador(jogo.getId(), self.__dealer.getId())
         
         for carta in cartasJogoJogador:
-            self.__jogadorHost.addCard(self.__baralho.deal(carta.getId()))
+            self.__jogadorHost.addCard(self.__baralho.deal(carta.getIdCarta()))
             
         for carta in cartasDealer:
-            self.__dealer.addCard(self.__baralho.deal(carta.getId()))
-            
-        return self
+            self.__dealer.addCard(self.__baralho.deal(carta.getIdCarta()))
+        
+        cartasJogadorStr = ", ".join([f"{c.getRank()} de {c.getSuit()}" for c in self.__jogadorHost.getCards()])
+        cartasDealerStr = ", ".join([f"{c.getRank()} de {c.getSuit()}" for c in self.__dealer.getCards()])
+        
+        retorno = (
+            f"Jogador {self.__jogadorHost.getNomeJogador()} tem: {cartasJogadorStr} "
+            f"(valor da mão: {self.__jogadorHost.getValorMao()})\n"
+            f"Dealer tem: {cartasDealerStr} "
+            f"(valor da mão: {self.__dealer.getValorMao()})"
+        )
+        
+        return retorno
 
     def getIdJogo(self):
         return self.__idJogo
@@ -188,5 +219,29 @@ class Blackjack:
         
         return resultado
 
-
+    def getDict(self):
+        return {
+            "idJogo": self.__idJogo,
+            "jogadorHost": {
+                "id": self.__jogadorHost.getId(),
+                "nome": self.__jogadorHost.getNomeJogador(),
+                "valorMao": self.__jogadorHost.getValorMao(),
+                "cartas": [c.getDict() for c in self.__jogadorHost.getCards()]
+            } if self.__jogadorHost else None,
+            "dealer": {
+                "id": self.__dealer.getId(),
+                "nome": self.__dealer.getNomeJogador(),
+                "valorMao": self.__dealer.getValorMao(),
+                "cartas": [c.getDict() for c in self.__dealer.getCards()]
+            } if self.__dealer else None,
+            "jogadores": [
+                {
+                    "id": jogador.getId(),
+                    "nome": jogador.getNomeJogador(),
+                    "valorMao": jogador.getValorMao(),
+                    "cartas": [c.getDict() for c in jogador.getCards()]
+                }
+                for jogador in self.__jogadores
+            ]
+        }
 

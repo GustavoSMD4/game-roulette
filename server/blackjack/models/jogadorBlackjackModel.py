@@ -1,8 +1,4 @@
 
-
-import uuid
-
-
 class JogadorBlackjackModel:
     def __init__(self, id, nome, valorMao):
         self.__id = id
