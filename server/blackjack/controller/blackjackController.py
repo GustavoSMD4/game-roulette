@@ -34,3 +34,13 @@ class BlackjackController:
                 return jsonify({"body": {"jogo": jogoCriado}})
             except Exception as e:
                 return jsonify({"error": str(e)}), 400
+            
+        @self.__app.route("/blackjack/restate", methods=["POST"])
+        def restateJogo():
+            try:
+                idJogoCriado = self.__service.restateJogoBlackjack(request.json)
+                jogoCriado = self.__repository.consultarJogo(idJogoCriado)
+                
+                return jsonify({"body": {"jogo": jogoCriado}})
+            except Exception as e:
+                return jsonify({"error": str(e)}), 400

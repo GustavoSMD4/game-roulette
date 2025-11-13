@@ -8,27 +8,23 @@ class BaralhoDb:
         self.__cartas: list[Carta] = []
 
     @classmethod
-    def newBaralhoFromDB(cls):
+    def newBaralhoFromDb(cls, qtdeBaralhos: int = 4):
         baralho = cls()
-
-        # Conecta ao banco
-        conn = sqlite3.connect("server/database/database.db", check_same_thread=False)
-        cursor = conn.cursor()
-
-        cartas = CartaRepo.newRepo().consultarTodos()
-
-        # Cria objetos Carta e adiciona ao baralho
-        for rank, suit, valor, nomeImagem in linhas:
-            baralho.__cartas.append(Carta.newCarta(suit, rank, valor, nomeImagem))
-
-        conn.close()
-
-        # Embaralha as cartas
-        random.shuffle(baralho.__cartas)
+        cartasBase = CartaRepo.newRepo().consultarTodos()
+        baralhoCompleto = cartasBase * qtdeBaralhos
+        baralho.setCartas(baralhoCompleto)
+        random.shuffle(baralho.getCartas())
         return baralho
-
-    def deal(self):
-        return self.__cartas.pop() if self.__cartas else None
+    
+    def deal(self, idCarta: str = None):
+        if idCarta is None:
+            return self.__cartas.pop() if self.__cartas else None
+        
+        for i, carta in enumerate(self.__cartas):
+            if carta.getId() == idCarta:
+                return self.__cartas.pop(i)
+        
+        return None
 
     def getCartas(self):
         return self.__cartas

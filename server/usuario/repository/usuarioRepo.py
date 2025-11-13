@@ -35,6 +35,9 @@ class UsuarioRepo:
         return self.__formatar()
     
     def create(self, usuarioCreate: Usuario):
+        if usuarioCreate.getUsuario() == "dealer":
+            raise Exception("Usuário não pode se chamar dealer")
+        
         self.__cursor.execute("INSERT INTO USUARIOS (ID,  USUARIO, SENHA, SALDO) VALUES(?, ?, ?, 0)",
                               (usuarioCreate.getId(), usuarioCreate.getUsuario(), usuarioCreate.getSenha()))
         

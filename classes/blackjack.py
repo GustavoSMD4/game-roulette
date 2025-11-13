@@ -1,14 +1,29 @@
 from classes.baralho import Baralho
+from classes.baralhoFromDb import BaralhoDb
 from classes.jogador import Jogador
+from server.blackjack.models.blackjackModel import BlackjackModel
+from server.blackjack.repository.blackjackRepo import BlackjackRepo
+from server.blackjack.repository.cartaJogadorBlackjackRepo import CartaJogadorBlackjackRepo
+from server.usuario.repository.usuarioRepo import UsuarioRepo
 
 class Blackjack:
     def __init__(self, jogadorHost: Jogador, qtdeBaralhos: int = 4):
-        self.__baralho = Baralho.newBaralho(qtdeBaralhos)
+        self.__idJogo = None
+        self.__baralho = BaralhoDb.newBaralhoFromDb(qtdeBaralhos)
         self.__jogadorHost = jogadorHost
         self.__jogadores: list[Jogador] = []
-        self.__dealer = Jogador.newJogador(nomeUsuario="Dealer")
+        self.__dealer: Jogador = None
+        self.__blackjackRepo = BlackjackRepo.newBlackjackRepo()
+        self.__cartaJogadorRepo = CartaJogadorBlackjackRepo.newRepo()
         
     def iniciarJogo(self):
+        jogo = self.__blackjackRepo.consultarJogoIdJogador(self.__jogadorHost.getId())
+        dealer = UsuarioRepo.newRepo().consultarPorUsuario("dealer")
+        self.__dealer = Jogador.newJogador(dealer.getId(), "dealer")
+        
+        if jogo:
+            raise Exception("O jogador já está em um jogo de blackjack")
+        
         carta1Jogador = self.__baralho.deal()
         carta2Jogador = self.__baralho.deal()
         cartaDealer = self.__baralho.deal()
@@ -16,6 +31,27 @@ class Blackjack:
         self.__jogadorHost.addCard(carta2Jogador)
         self.__dealer.addCard(cartaDealer)
         self.__jogadores.append(self.__jogadorHost)
+        jogoCriado = self.__blackjackRepo.createNovoJogo(BlackjackModel.newBlackjackModel(idJogadorHost=self.__jogadorHost.getId()))
+        self.__idJogo = jogoCriado.getId()
+        return self
+        
+    def restateJogo(self):
+        jogo = self.__blackjackRepo.consultarJogoIdJogador(self.__jogadorHost.getId())
+        dealer = UsuarioRepo.newRepo().consultarPorUsuario("dealer")
+        self.__dealer = Jogador.newJogador(dealer.getId(), "dealer")
+        cartasJogoJogador = self.__cartaJogadorRepo.consultarCartasJogador(jogo.getId(), jogo.getIdJogador())
+        cartasDealer = self.__cartaJogadorRepo.consultarCartasJogador(jogo.getId(), self.__dealer.getId())
+        
+        for carta in cartasJogoJogador:
+            self.__jogadorHost.addCard(self.__baralho.deal(carta.getId()))
+            
+        for carta in cartasDealer:
+            self.__dealer.addCard(self.__baralho.deal(carta.getId()))
+            
+        return self
+
+    def getIdJogo(self):
+        return self.__idJogo
 
     def addJogador(self, jogador: Jogador):
         for joga in self.__jogadores:

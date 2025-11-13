@@ -7,7 +7,7 @@ class BlackjackModel:
         self.__idJogadorHost = idJogadorHost
         
     @classmethod
-    def newBlackjackModel(cls, id = None, idJogadorHost = False):
+    def newBlackjackModel(cls, id = None, idJogadorHost = None):
         if id is None:
             id = str(uuid.uuid4())
         
