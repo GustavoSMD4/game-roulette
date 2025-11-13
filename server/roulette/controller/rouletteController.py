@@ -34,3 +34,23 @@ class RouletteController:
                 
             except Exception as e:
                 return jsonify({"error": str(e)}), 400
+            
+        @self.app.route("/roulette/stats/gerais")
+        @self.limiter.limit("10 per minute")
+        def rouletteStatsGerais():
+            try:
+                stats = self.__service.stats()
+                return jsonify({"body": {"stats": stats}})
+                
+            except Exception as e:
+                return jsonify({"error": str(e)}), 400
+            
+        @self.app.route("/roulette/stats/dia")
+        @self.limiter.limit("10 per minute")
+        def rouletteStatsDia():
+            try:
+                stats = self.__service.statsPorDia()
+                return jsonify({"body": {"stats": stats}})
+                
+            except Exception as e:
+                return jsonify({"error": str(e)}), 400

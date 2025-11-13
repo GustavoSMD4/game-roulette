@@ -1,3 +1,5 @@
+from collections import defaultdict
+from datetime import datetime
 from flask import jsonify
 from server.games.roulette import Roulette
 from server.roulette.models.resultadoRoletaModel import ResultadoRoleta
@@ -41,23 +43,28 @@ class RouletteService:
             (
                 (r.getValorResultado() - r.getValorAposta())  # lucro líquido
                 if r.getGanhou() == 1
-                else -(r.getValorAposta() or 0)               # perda total da aposta
+                else -(r.getValorAposta() or 0)               # perda total
             )
             for r in resultados
         )
         
         lucroTotal = round(retornoTotalDinheiro, 2)
 
+        # Contagem dos tipos de aposta
         vezesApostouRed = sum(1 for r in resultados if str(r.getApostaJogador()).lower() == "red")
         vezesApostouBlack = sum(1 for r in resultados if str(r.getApostaJogador()).lower() == "black")
+        vezesApostouNumero = sum(
+            1 for r in resultados
+            if str(r.getApostaJogador()).lower() not in ["red", "black"]
+        )
 
-        if vezesApostouRed > vezesApostouBlack:
-            apostaPreferida = "🔴 Red"
-        elif vezesApostouBlack > vezesApostouRed:
-            apostaPreferida = "⚫ Black"
-        else:
-            apostaPreferida = "⚪ Empate (Red/Black)"
-            
+        # Define aposta preferida
+        tiposAposta = {
+            "🔴 Red": vezesApostouRed,
+            "⚫ Black": vezesApostouBlack,
+            "🔢 Números": vezesApostouNumero
+        }
+        apostaPreferida = max(tiposAposta, key=tiposAposta.get)
 
         # Formatação bonita da resposta
         stats = f"""
@@ -71,10 +78,126 @@ class RouletteService:
 
         🔴 Apostas em Red: {vezesApostouRed}
         ⚫ Apostas em Black: {vezesApostouBlack}
+        🔢 Apostas em Números: {vezesApostouNumero}
         ⭐ Aposta Preferida: {apostaPreferida}
         """.strip()
 
         return stats
+
+    def stats(self):
+        resultados = self.__resultadoRoletaRepo.consultarTodos()
+
+        if not resultados or len(resultados) == 0:
+            return "🎰 Nenhum jogo registrado ainda."
+
+        totalJogos = len(resultados)
+        vitorias = sum(1 for r in resultados if r.getGanhou() == 1)
+        winRate = round((vitorias / totalJogos) * 100, 2)
+
+        dinheiroTotalApostado = sum(r.getValorAposta() or 0 for r in resultados)
+
+        # Lucro líquido total
+        retornoTotalDinheiro = sum(
+            (
+                (r.getValorResultado() - r.getValorAposta())  # lucro líquido
+                if r.getGanhou() == 1
+                else -(r.getValorAposta() or 0)               # perda total
+            )
+            for r in resultados
+        )
+        lucroTotal = round(retornoTotalDinheiro, 2)
+
+        # Contagem de tipos de aposta
+        vezesApostouRed = sum(1 for r in resultados if str(r.getApostaJogador()).lower() == "red")
+        vezesApostouBlack = sum(1 for r in resultados if str(r.getApostaJogador()).lower() == "black")
+        vezesApostouNumero = sum(
+            1 for r in resultados
+            if str(r.getApostaJogador()).lower() not in ["red", "black"]
+        )
+
+        # Aposta mais popular
+        tiposAposta = {
+            "🔴 Red": vezesApostouRed,
+            "⚫ Black": vezesApostouBlack,
+            "🔢 Números": vezesApostouNumero
+        }
+        apostaMaisPopular = max(tiposAposta, key=tiposAposta.get)
+
+        stats = f"""
+        📊 Estatísticas Gerais da Roleta
+
+        🎮 Total de Jogos: {totalJogos}
+        🏆 Vitórias: {vitorias} ({winRate}%)
+
+        💰 Total Apostado: R$ {dinheiroTotalApostado:.2f}
+        📈 Lucro Total: {'+' if lucroTotal >= 0 else '-'}R$ {abs(lucroTotal):.2f}
+
+        🔴 Apostas em Red: {vezesApostouRed}
+        ⚫ Apostas em Black: {vezesApostouBlack}
+        🔢 Apostas em Números: {vezesApostouNumero}
+        ⭐ Aposta Mais Popular: {apostaMaisPopular}
+        """.strip()
+
+        return stats 
+    
+    def statsPorDia(self):
+        resultados = self.__resultadoRoletaRepo.consultarTodos()
+
+        if not resultados or len(resultados) == 0:
+            return "🎰 Nenhum jogo registrado ainda."
+
+        statsDiarios = defaultdict(lambda: {
+            "totalJogos": 0,
+            "vitorias": 0,
+            "dinheiroApostado": 0.0,
+            "lucro": 0.0,
+            "red": 0,
+            "black": 0,
+            "numero": 0
+        })
+
+        for r in resultados:
+            data = r.getDataHora()
+            if isinstance(data, str):
+                data = datetime.fromisoformat(data)
+            dia = data.date()
+
+            statsDiarios[dia]["totalJogos"] += 1
+            if r.getGanhou() == 1:
+                statsDiarios[dia]["vitorias"] += 1
+                statsDiarios[dia]["lucro"] += (r.getValorResultado() - r.getValorAposta())
+            else:
+                statsDiarios[dia]["lucro"] -= r.getValorAposta() or 0
+
+            statsDiarios[dia]["dinheiroApostado"] += r.getValorAposta() or 0
+
+            aposta = str(r.getApostaJogador()).lower()
+            if aposta == "red":
+                statsDiarios[dia]["red"] += 1
+            elif aposta == "black":
+                statsDiarios[dia]["black"] += 1
+            else:
+                statsDiarios[dia]["numero"] += 1
+
+        resposta = "📅 Estatísticas Diárias da Roleta\n"
+        for dia, stats in sorted(statsDiarios.items()):
+            winRate = round((stats["vitorias"] / stats["totalJogos"]) * 100, 2)
+            apostaMaisPopular = max(
+                {"🔴 Red": stats["red"], "⚫ Black": stats["black"], "🔢 Números": stats["numero"]},
+                key=lambda k: {"🔴 Red": stats["red"], "⚫ Black": stats["black"], "🔢 Números": stats["numero"]}[k]
+            )
+
+            resposta += f"""
+            📆 {dia}
+            🎮 Total de Jogos: {stats['totalJogos']}
+            🏆 Vitórias: {stats['vitorias']} ({winRate}%)
+            💰 Total Apostado: R$ {stats['dinheiroApostado']:.2f}
+            📈 Lucro Total: {'+' if stats['lucro'] >= 0 else '-'}R$ {abs(stats['lucro']):.2f}
+            🔴 Red: {stats['red']}, ⚫ Black: {stats['black']}, 🔢 Números: {stats['numero']}
+            ⭐ Aposta Mais Popular: {apostaMaisPopular}
+            """
+            
+        return resposta.strip()
     
     def play(self, req: dict):
         idUsuario = req.get("idUsuario")
@@ -103,19 +226,16 @@ class RouletteService:
         if type not in ["number", "color"]:
             raise Exception("Types only color or number")
 
-        if type == "number":
-            textMensagemResultado = self.__resultadoJogada(Roulette.newRoulette().playNumber(bet, betAmount), idUsuario, str(bet), betAmount)
-            return textMensagemResultado
-
-        if type == "color":
-            textMensagemResultado = self.__resultadoJogada(Roulette.newRoulette().playColor(bet, betAmount), idUsuario, str(bet), betAmount)
-            return textMensagemResultado
+        textMensagemResultado = self.jogar(type, idUsuario, str(bet), betAmount)
+        return textMensagemResultado
     
-    def __resultadoJogada(self, resultado: dict, idUsuario: str, apostaJogador: str, valorAposta: float):
-        """Altera o Saldo, registra o resultado da jogada no histórico do servidor e retorna str do resultado"""
+    def jogar(self, type: str, idUsuario: str, apostaJogador: str, valorAposta: float):
+        """Realiza a jogada, altera o Saldo do jogador, registra o resultado da jogada no histórico do servidor e retorna str do resultado"""
         usuario = self.__usuarioRepository.consultaPorId(idUsuario)
         novoSaldo = usuario.getSaldo() - valorAposta
         ganhou = 0
+        
+        resultado = Roulette.newRoulette().playNumber(apostaJogador, valorAposta)
         
         if resultado.get("message") == "You won":
             novoSaldo += resultado.get("amount")

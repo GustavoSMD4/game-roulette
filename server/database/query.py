@@ -16,7 +16,7 @@ def createTable():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS BLACKJACK (
     	ID VARCHAR(36) NOT NULL PRIMARY KEY UNIQUE,
-		JOGADOR_VEZ BOOLEAN
+		JOGADOR_HOST INTEGER
 		);
  	""")
     
