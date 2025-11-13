@@ -10,7 +10,7 @@ class Jogador:
         self.__valorAposta: float = None
         
     @classmethod
-    def newJogador(cls, idUsuario, nomeUsuario):
+    def newJogador(cls, idUsuario = None, nomeUsuario = None):
         return cls(idUsuario, nomeUsuario)
     
     def getValorMao(self):

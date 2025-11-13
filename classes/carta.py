@@ -1,5 +1,3 @@
-
-
 class Carta:
     def __init__(self, suit, rank, valor, nomeImagem):
         self.__suit: str = suit

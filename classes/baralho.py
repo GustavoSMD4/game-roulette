@@ -1,6 +1,4 @@
-
 import random
-
 from classes.carta import Carta
 
 class Baralho:

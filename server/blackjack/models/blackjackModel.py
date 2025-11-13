@@ -2,28 +2,28 @@ import uuid
 
 
 class BlackjackModel:
-    def __init__(self, id: str, jogadorVez: str):
+    def __init__(self, id: str, idJogadorHost: str):
         self.__id = id
-        self.__jogadorVez = jogadorVez
+        self.__idJogadorHost = idJogadorHost
         
     @classmethod
-    def newBlackjackModel(cls, id = None, jogadorVez = False):
+    def newBlackjackModel(cls, id = None, idJogadorHost = False):
         if id is None:
             id = str(uuid.uuid4())
         
-        return cls(id, jogadorVez)
+        return cls(id, idJogadorHost)
     
     def getDict(self):
         return {
             "id": self.__id,
-            "jogadorVez": self.__jogadorVez
+            "idJogadorHost": self.__idJogadorHost
         }
     
     def getId(self):
         return self.__id
     
-    def getJogadorVez(self):
-        return self.__jogadorVez
+    def getIdJogador(self):
+        return self.__idJogadorHost
     
-    def setJogadorVez(self, idJogador):
-        self.__jogadorVez = idJogador
+    def setIdJogador(self, idJogador):
+        self.__idJogadorHost = idJogador

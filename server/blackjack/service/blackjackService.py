@@ -15,10 +15,9 @@ class BlackjackService:
     def createNovoJogoBlackjack(self, req: dict):
         idUsuario = req.get("idUsuario")
         nomeUsuario = req.get("nomeUsuario") 
-        novoJogo = BlackjackModel.newBlackjackModel()
+        novoJogo = BlackjackModel.newBlackjackModel(idUsuario, nomeUsuario)
         
         blackJack = Blackjack([nomeUsuario])
-        novoJogo.setJogadorVez(blackJack.jogadores[0].getId())
         self.__repository.createNovoJogo(novoJogo)
 
         return novoJogo.getId()
