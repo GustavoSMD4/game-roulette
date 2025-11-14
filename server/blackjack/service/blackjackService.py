@@ -16,9 +16,9 @@ class BlackjackService:
     def createNovoJogoBlackjack(self, req: dict):
         idUsuario = req.get("idUsuario")
         nomeUsuario = req.get("nomeUsuario")        
-        return Blackjack(Jogador.newJogador(nomeUsuario=nomeUsuario, idUsuario=idUsuario)).iniciarJogo()
+        return Blackjack.iniciarJogo(idUsuario, nomeUsuario)
     
     def restateJogoBlackjack(self, req: dict):
         idUsuario = req.get("idUsuario")
         nomeUsuario = req.get("nomeUsuario")         
-        return Blackjack(Jogador.newJogador(nomeUsuario=nomeUsuario, idUsuario=idUsuario)).restateJogo()
+        return Blackjack.restateJogo(idUsuario, nomeUsuario)

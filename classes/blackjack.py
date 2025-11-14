@@ -1,4 +1,3 @@
-from classes.baralho import Baralho
 from classes.baralhoFromDb import BaralhoDb
 from classes.jogador import Jogador
 from server.blackjack.models.blackjackModel import BlackjackModel
@@ -7,7 +6,7 @@ from server.blackjack.repository.cartaJogadorBlackjackRepo import CartaJogadorBl
 from server.usuario.repository.usuarioRepo import UsuarioRepo
 
 class Blackjack:
-    def __init__(self, jogadorHost: Jogador, qtdeBaralhos: int = 4):
+    def __init__(self, jogadorHost: Jogador = None, qtdeBaralhos: int = 4):
         self.__idJogo = None
         self.__baralho = BaralhoDb.newBaralhoFromDb(qtdeBaralhos)
         self.__jogadorHost = jogadorHost
@@ -15,71 +14,104 @@ class Blackjack:
         self.__dealer: Jogador = None
         self.__blackjackRepo = BlackjackRepo.newBlackjackRepo()
         self.__cartaJogadorRepo = CartaJogadorBlackjackRepo.newRepo()
-        
-    def iniciarJogo(self):
-        jogo = self.__blackjackRepo.consultarJogoIdJogador(self.__jogadorHost.getId())
-        dealer = UsuarioRepo.newRepo().consultarPorUsuario("dealer")
-        self.__dealer = Jogador.newJogador(dealer.getId(), "dealer")
+        self.__jogadasJogador = []
+    
+    @classmethod
+    def iniciarJogo(cls, idJogadorHost, nomeJogadorHost):
+        blackjack = cls()
+        jogo = blackjack.__blackjackRepo.consultarJogoIdJogador(idJogadorHost)
         
         if jogo:
             raise Exception("O jogador já está em um jogo de blackjack")
         
-        carta1Jogador = self.__baralho.deal()
-        carta2Jogador = self.__baralho.deal()
-        cartaDealer = self.__baralho.deal()
+        blackjack.__jogadorHost = Jogador.newJogador(idJogadorHost, nomeJogadorHost)
+        dealer = UsuarioRepo.newRepo().consultarPorUsuario("dealer")
+        blackjack.__dealer = Jogador.newJogador(dealer.getId(), "dealer")
         
-        self.__jogadorHost.addCard(carta1Jogador)
-        self.__jogadorHost.addCard(carta2Jogador)
-        self.__dealer.addCard(cartaDealer)
-        self.__jogadores.append(self.__jogadorHost)
+        carta1Jogador = blackjack.__baralho.deal()
+        carta2Jogador = blackjack.__baralho.deal()
+        cartaDealer = blackjack.__baralho.deal()
         
-        jogoCriado = self.__blackjackRepo.createNovoJogo(
-            BlackjackModel.newBlackjackModel(dict(idJogadorHost=self.__jogadorHost.getId()))
+        blackjack.__jogadorHost.addCard(carta1Jogador)
+        blackjack.__jogadorHost.addCard(carta2Jogador)
+        blackjack.__dealer.addCard(cartaDealer)
+        blackjack.__jogadores.append(blackjack.__jogadorHost)
+        
+        jogoCriado = blackjack.__blackjackRepo.createNovoJogo(
+            BlackjackModel.newBlackjackModel(dict(idJogadorHost=blackjack.__jogadorHost.getId()))
         )
-        self.__idJogo = jogoCriado.getId()
+        blackjack.__idJogo = jogoCriado.getId()
         
-        self.__cartaJogadorRepo.createCarta(self.__idJogo, self.__jogadorHost.getId(), carta1Jogador.getId())
-        self.__cartaJogadorRepo.createCarta(self.__idJogo, self.__jogadorHost.getId(), carta2Jogador.getId())
-        self.__cartaJogadorRepo.createCarta(self.__idJogo, self.__dealer.getId(), cartaDealer.getId())
+        blackjack.__cartaJogadorRepo.createCarta(blackjack.__idJogo, blackjack.__jogadorHost.getId(), carta1Jogador.getId())
+        blackjack.__cartaJogadorRepo.createCarta(blackjack.__idJogo, blackjack.__jogadorHost.getId(), carta2Jogador.getId())
+        blackjack.__cartaJogadorRepo.createCarta(blackjack.__idJogo, blackjack.__dealer.getId(), cartaDealer.getId())
         
-        cartasJogador = ", ".join([f"{c.getRank()} de {c.getSuit()}" for c in self.__jogadorHost.getCards()])
-        cartasDealer = ", ".join([f"{c.getRank()} de {c.getSuit()}" for c in self.__dealer.getCards()])
+        cartasJogador = ", ".join([f"{c.getRank()} de {c.getSuit()}" for c in blackjack.__jogadorHost.getCards()])
+        cartasDealer = ", ".join([f"{c.getRank()} de {c.getSuit()}" for c in blackjack.__dealer.getCards()])
+        jogadasJogador = blackjack.verificarJogadasJogador(blackjack.__jogadorHost)
         
         retorno = (
-            f"Jogador {self.__jogadorHost.getNomeJogador()} tem: {cartasJogador} "
-            f"(valor da mão: {self.__jogadorHost.getValorMao()})\n"
+            f"Jogador {blackjack.__jogadorHost.getNomeJogador()} tem: {cartasJogador} "
+            f"(valor da mão: {blackjack.__jogadorHost.getValorMao()})\n"
             f"Dealer tem: {cartasDealer} "
-            f"(valor da mão: {self.__dealer.getValorMao()})"
+            f"(valor da mão: {blackjack.__dealer.getValorMao()})\n"
+            f"Jogadas possíveis: {jogadasJogador if jogadasJogador else 'Nenhuma'}"
         )
         
         return retorno
-        
-    def restateJogo(self):
-        jogo = self.__blackjackRepo.consultarJogoIdJogador(self.__jogadorHost.getId())
-        self.__idJogo = jogo.getId()
+    
+    @classmethod
+    def restateJogo(cls, idJogador, nomeJogador):
+        blackjack = cls()
+        blackjack.__jogadorHost = Jogador.newJogador(idJogador, nomeJogador)
+        jogo = blackjack.__blackjackRepo.consultarJogoIdJogador(idJogador)
+        blackjack.__idJogo = jogo.getId()
         dealer = UsuarioRepo.newRepo().consultarPorUsuario("dealer")
-        self.__dealer = Jogador.newJogador(dealer.getId(), "dealer")
+        blackjack.__dealer = Jogador.newJogador(dealer.getId(), "dealer")
         
-        cartasJogoJogador = self.__cartaJogadorRepo.consultarCartasJogador(jogo.getId(), jogo.getIdJogador())
-        cartasDealer = self.__cartaJogadorRepo.consultarCartasJogador(jogo.getId(), self.__dealer.getId())
+        cartasJogoJogador = blackjack.__cartaJogadorRepo.consultarCartasJogador(jogo.getId(), jogo.getIdJogador())
+        cartasDealer = blackjack.__cartaJogadorRepo.consultarCartasJogador(jogo.getId(), blackjack.__dealer.getId())
         
         for carta in cartasJogoJogador:
-            self.__jogadorHost.addCard(self.__baralho.deal(carta.getIdCarta()))
+            blackjack.__jogadorHost.addCard(blackjack.__baralho.deal(carta.getIdCarta()))
             
         for carta in cartasDealer:
-            self.__dealer.addCard(self.__baralho.deal(carta.getIdCarta()))
+            blackjack.__dealer.addCard(blackjack.__baralho.deal(carta.getIdCarta()))
         
-        cartasJogadorStr = ", ".join([f"{c.getRank()} de {c.getSuit()}" for c in self.__jogadorHost.getCards()])
-        cartasDealerStr = ", ".join([f"{c.getRank()} de {c.getSuit()}" for c in self.__dealer.getCards()])
+        cartasJogador = ", ".join([f"{c.getRank()} de {c.getSuit()}" for c in blackjack.__jogadorHost.getCards()])
+        cartasDealer = ", ".join([f"{c.getRank()} de {c.getSuit()}" for c in blackjack.__dealer.getCards()])
+        jogadasJogador = blackjack.verificarJogadasJogador(blackjack.__jogadorHost)
         
         retorno = (
-            f"Jogador {self.__jogadorHost.getNomeJogador()} tem: {cartasJogadorStr} "
-            f"(valor da mão: {self.__jogadorHost.getValorMao()})\n"
-            f"Dealer tem: {cartasDealerStr} "
-            f"(valor da mão: {self.__dealer.getValorMao()})"
+            f"Jogador {blackjack.__jogadorHost.getNomeJogador()} tem: {cartasJogador} "
+            f"(valor da mão: {blackjack.__jogadorHost.getValorMao()})\n"
+            f"Dealer tem: {cartasDealer} "
+            f"(valor da mão: {blackjack.__dealer.getValorMao()})\n"
+            f"Jogadas possíveis: {jogadasJogador if jogadasJogador else 'Nenhuma'}"
         )
         
         return retorno
+    
+    @classmethod
+    def jogadaJogador(cls, idJogador, nomeJogador, jogada: int):
+        blackjack = cls()
+        blackjack.restateJogo(idJogador, nomeJogador)
+        
+        if jogada not in [1, 2, 3]:
+            raise Exception("Jogada aceita somente números 1, 2 e 3")
+        
+        if jogada not in blackjack.__jogadasJogador:
+            raise Exception("Jogador não pode realizar essa jogada")
+        
+        if jogada == 1:
+            blackjack.__jogadorHost.addCard(blackjack.__baralho.deal())
+            
+        if jogada == 2:
+            blackjack.__jogadorHost.addCard(blackjack.__baralho.deal())
+            blackjack.__jogadaDealer()
+            
+        if jogada == 3:
+            raise Exception("Ainda não implementado")
 
     def getIdJogo(self):
         return self.__idJogo
@@ -111,7 +143,35 @@ class Blackjack:
             return False
 
         return True
+    
+    def verificarJogadasJogador(self, jogador: Jogador):
+        comprar = True
+        dobrar = True
+        dividir = True
 
+        if len(jogador.getCards()) > 2:
+            dobrar = False
+            dividir = False
+
+        if jogador.getValorMao() >= 21:
+            comprar = False
+            dobrar = False
+            dividir = False
+
+        opcoes = []
+
+        if comprar:
+            self.__jogadasJogador.append(1)
+            opcoes.append("1")
+        if dobrar:
+            self.__jogadasJogador.append(2)
+            opcoes.append("2")
+        if dividir:
+            self.__jogadasJogador.append(3)
+            opcoes.append("3")
+
+        return ",".join(opcoes)
+        
     def verificarJogadorPodeDividir(self, jogador: Jogador):
         if jogador.getCards()[0].getValor() == jogador.getCards()[1].getValor() and len(jogador.getCards()) == 2:
             return True
@@ -245,3 +305,6 @@ class Blackjack:
             ]
         }
 
+    def __jogadaDealer(self):
+        while self.verificarDealerPodeContinuar():
+            self.__dealer.addCard(self.__baralho.deal())
