@@ -4,6 +4,7 @@ from server.blackjack.models.blackjackModel import BlackjackModel
 from server.blackjack.repository.blackjackRepo import BlackjackRepo
 from server.blackjack.repository.cartaJogadorBlackjackRepo import CartaJogadorBlackjackRepo
 from server.usuario.repository.usuarioRepo import UsuarioRepo
+from PIL import Image
 
 class Blackjack:
     def __init__(self, jogadorHost: Jogador = None, qtdeBaralhos: int = 4):
@@ -92,7 +93,7 @@ class Blackjack:
                     
         if jogada == 3:
             raise Exception("Ainda não implementado")
-
+    
     def getIdJogo(self):
         return self.__idJogo
 
@@ -305,3 +306,39 @@ class Blackjack:
     def __finalizarJogo(self):
         self.__cartaJogadorRepo.deletarTodasCartasJogo(self.__idJogo)
         self.__blackjackRepo.deleteJogo(self.__idJogo)
+    
+    @staticmethod
+    def __gerarImagemCartas(cartas, caminhoSaida="mesaBlackjack.png"):
+        """
+        Gera uma imagem final juntando todas as imagens das cartas recebidas.
+        Usa o método carta.getCaminhoImagem() para buscar os arquivos.
+        """
+
+        imagens = [Image.open(carta.getCaminhoImagem()) for carta in cartas]
+
+        # Dimensões de cada carta
+        larguraCarta, alturaCarta = imagens[0].size
+
+        # Espaço entre cartas
+        espacamento = 25
+
+        # Tamanho da imagem final
+        larguraFinal = len(imagens) * larguraCarta + (len(imagens) - 1) * espacamento
+        alturaFinal = alturaCarta
+
+        # Criar fundo verde estilo mesa
+        mesa = Image.new("RGB", (larguraFinal, alturaFinal), (8, 100, 48))
+
+        # Posicionar cartas
+        x = 0
+        for img in imagens:
+            mesa.paste(img, (x, 0))
+            x += larguraCarta + espacamento
+
+        mesa.save(caminhoSaida)
+        return caminhoSaida
+        
+        
+        
+        
+        

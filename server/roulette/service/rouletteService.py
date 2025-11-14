@@ -234,8 +234,13 @@ class RouletteService:
         usuario = self.__usuarioRepository.consultaPorId(idUsuario)
         novoSaldo = usuario.getSaldo() - valorAposta
         ganhou = 0
+        resultado = None
         
-        resultado = Roulette.newRoulette().playNumber(apostaJogador, valorAposta)
+        if type == "number":
+            resultado = Roulette.newRoulette().playNumber(apostaJogador, valorAposta)
+        
+        if type == "color":
+            resultado = Roulette.newRoulette().playColor(apostaJogador, valorAposta)
         
         if resultado.get("message") == "You won":
             novoSaldo += resultado.get("amount")
