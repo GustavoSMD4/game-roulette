@@ -61,6 +61,13 @@ class CartaJogadorBlackjackRepo:
         """, (idRegistro,))
         
         self.__conn.commit()
+        
+    def deletarTodasCartasJogo(self, idJogo: str):
+        self.__cursor.execute("""
+            DELETE FROM CARTA_JOGADOR_BLACKJACK WHERE ID_JOGO = ?
+        """, (idJogo,))
+        
+        self.__conn.commit()
 
     def __formatar(self):
         headers = [desc[0].lower() for desc in self.__cursor.description]

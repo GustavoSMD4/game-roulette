@@ -46,25 +46,17 @@ class Blackjack:
         blackjack.__cartaJogadorRepo.createCarta(blackjack.__idJogo, blackjack.__jogadorHost.getId(), carta2Jogador.getId())
         blackjack.__cartaJogadorRepo.createCarta(blackjack.__idJogo, blackjack.__dealer.getId(), cartaDealer.getId())
         
-        cartasJogador = ", ".join([f"{c.getRank()} de {c.getSuit()}" for c in blackjack.__jogadorHost.getCards()])
-        cartasDealer = ", ".join([f"{c.getRank()} de {c.getSuit()}" for c in blackjack.__dealer.getCards()])
-        jogadasJogador = blackjack.verificarJogadasJogador(blackjack.__jogadorHost)
-        
-        retorno = (
-            f"Jogador {blackjack.__jogadorHost.getNomeJogador()} tem: {cartasJogador} "
-            f"(valor da mão: {blackjack.__jogadorHost.getValorMao()})\n"
-            f"Dealer tem: {cartasDealer} "
-            f"(valor da mão: {blackjack.__dealer.getValorMao()})\n"
-            f"Jogadas possíveis: {jogadasJogador if jogadasJogador else 'Nenhuma'}"
-        )
-        
-        return retorno
+        return blackjack.__mensagemRetorno()
     
     @classmethod
     def restateJogo(cls, idJogador, nomeJogador):
         blackjack = cls()
         blackjack.__jogadorHost = Jogador.newJogador(idJogador, nomeJogador)
         jogo = blackjack.__blackjackRepo.consultarJogoIdJogador(idJogador)
+        
+        if jogo is None:
+            raise Exception("Jogador ainda não está em nenhum jogo")
+        
         blackjack.__idJogo = jogo.getId()
         dealer = UsuarioRepo.newRepo().consultarPorUsuario("dealer")
         blackjack.__dealer = Jogador.newJogador(dealer.getId(), "dealer")
@@ -78,38 +70,26 @@ class Blackjack:
         for carta in cartasDealer:
             blackjack.__dealer.addCard(blackjack.__baralho.deal(carta.getIdCarta()))
         
-        cartasJogador = ", ".join([f"{c.getRank()} de {c.getSuit()}" for c in blackjack.__jogadorHost.getCards()])
-        cartasDealer = ", ".join([f"{c.getRank()} de {c.getSuit()}" for c in blackjack.__dealer.getCards()])
-        jogadasJogador = blackjack.verificarJogadasJogador(blackjack.__jogadorHost)
-        
-        retorno = (
-            f"Jogador {blackjack.__jogadorHost.getNomeJogador()} tem: {cartasJogador} "
-            f"(valor da mão: {blackjack.__jogadorHost.getValorMao()})\n"
-            f"Dealer tem: {cartasDealer} "
-            f"(valor da mão: {blackjack.__dealer.getValorMao()})\n"
-            f"Jogadas possíveis: {jogadasJogador if jogadasJogador else 'Nenhuma'}"
-        )
-        
-        return retorno
+        return blackjack.__mensagemRetorno()
     
     @classmethod
     def jogadaJogador(cls, idJogador, nomeJogador, jogada: int):
         blackjack = cls()
-        blackjack.restateJogo(idJogador, nomeJogador)
+        blackjack.__restateJogo(idJogador, nomeJogador)
         
-        if jogada not in [1, 2, 3]:
-            raise Exception("Jogada aceita somente números 1, 2 e 3")
-        
-        if jogada not in blackjack.__jogadasJogador:
-            raise Exception("Jogador não pode realizar essa jogada")
-        
+        if jogada == 0:
+            blackjack.__jogadaDealer()
+            return blackjack.verificarVencedor()
+
         if jogada == 1:
             blackjack.__jogadorHost.addCard(blackjack.__baralho.deal())
-            
+            return blackjack.__mensagemRetorno()
+                    
         if jogada == 2:
             blackjack.__jogadorHost.addCard(blackjack.__baralho.deal())
             blackjack.__jogadaDealer()
-            
+            return blackjack.verificarVencedor()
+                    
         if jogada == 3:
             raise Exception("Ainda não implementado")
 
@@ -123,12 +103,6 @@ class Blackjack:
             
         self.__jogadores.append(jogador)
 
-    def jogadaJogador(self, jogador: Jogador):
-        if jogador.getCards() == 2 and jogador.getValorMao() == 21:
-            return f"{jogador.getNomeJogador()} tem Blackjack!"
-        
-        return self.verificarJogadorPodeContinuar(jogador)
-    
     def adicionarCartaJogador(self, jogador: Jogador):
         jogador.addCard(self.__baralho.deal())
         
@@ -159,16 +133,17 @@ class Blackjack:
             dividir = False
 
         opcoes = []
-
+        
+        opcoes.append("0: parar")
         if comprar:
             self.__jogadasJogador.append(1)
-            opcoes.append("1")
+            opcoes.append("1: comprar")
         if dobrar:
             self.__jogadasJogador.append(2)
-            opcoes.append("2")
+            opcoes.append(" 2: dobrar")
         if dividir:
             self.__jogadasJogador.append(3)
-            opcoes.append("3")
+            opcoes.append(" 3: dividir")
 
         return ",".join(opcoes)
         
@@ -211,73 +186,55 @@ class Blackjack:
         return True
 
     def verificarVencedor(self):
-        resultado: list[dict] = []
-        
+        valorDealer = self.__dealer.getValorMao()
+        cartasDealer = ", ".join([f"{c.getRank()} de {c.getSuit()}" for c in self.__dealer.getCards()])
+
+        mensagens = []
+
         for jogador in self.__jogadores:
-            if len(jogador.getCards()) == 2 and jogador.getValorMao() == 21:
-                if len(self.__dealer.getCards()) == 2 and self.__dealer.getValorMao() == 21:
-                    resultado.append({
-                        "message": f"{jogador.getNomeJogador()} tem blackjack, __ tem blackjack, empate!",
-                        "ganhou": 2,
-                        "valor": 0
-                    })
+            valorJogador = jogador.getValorMao()
+            cartasJogador = ", ".join([f"{c.getRank()} de {c.getSuit()}" for c in jogador.getCards()])
 
-            if len(jogador.getCards()) == 2 and jogador.getValorMao() == 21:
-                resultado.append({
-                    "message": f"{jogador.getNomeJogador()} tem blackjack, dealer tem {self.__dealer.getValorMao()}, jogador ganhou!",
-                    "ganhou": 1,
-                    "valor": (jogador.getValorAposta() * 1.5)
-                })
+            prefixo = (
+                f"Dealer tem {valorDealer} ({cartasDealer}), "
+                f"{jogador.getNomeJogador()} tem {valorJogador} ({cartasJogador}). "
+            )
 
-            if len(self.__dealer.getCards()) == 2 and self.__dealer.getValorMao() == 21:
-                resultado.append({
-                    "message": f"{jogador.getNomeJogador()} tem {jogador.getValorMao()}, dealer tem blackjack, dealer ganhou!",
-                    "ganhou": 0,
-                    "valor": -jogador.getValorAposta()
-                })
+            # regras
+            if len(jogador.getCards()) == 2 and valorJogador == 21 and len(self.__dealer.getCards()) == 2 and valorDealer == 21:
+                mensagens.append(prefixo + "Ambos têm blackjack. Empate!")
+                continue
 
-            if jogador.getValorMao() > 21:
-                resultado.append({
-                    "message": f"{jogador.getNomeJogador()} estourou, dealer Ganhou!",
-                    "ganhou": 0,
-                    "valor": -jogador.getValorAposta()
-                })
+            if len(jogador.getCards()) == 2 and valorJogador == 21:
+                mensagens.append(prefixo + "Jogador tem blackjack! Jogador ganhou!")
+                continue
 
-            if jogador.getValorMao() <= 21 and self.__dealer.getValorMao() > 21:
-                resultado.append({
-                    "message": f"Dealer estourou, {jogador.getNomeJogador()} ganhou!",
-                    "ganhou": 1,
-                    "valor": jogador.getValorAposta()
-                })
+            if len(self.__dealer.getCards()) == 2 and valorDealer == 21:
+                mensagens.append(prefixo + "Dealer tem blackjack! Dealer ganhou!")
+                continue
 
-            if jogador.getValorMao() == self.__dealer.getValorMao():
-                resultado.append({
-                    "message": f"{jogador.getNomeJogador()} tem {jogador.getValorMao()}, Dealer tem {self.__dealer.getValorMao()}. Empate!",
-                    "ganhou": 2,
-                    "valor": 0
-                })
+            if valorJogador > 21:
+                mensagens.append(prefixo + "Jogador estourou! Dealer ganhou!")
+                continue
 
-            if jogador.getValorMao() < self.__dealer.getValorMao() and self.__dealer.getValorMao() <= 21:
-                resultado.append({
-                    "message": f"{jogador.getNomeJogador()} tem {jogador.getValorMao()}, Dealer tem {self.__dealer.getValorMao()}. Dealer ganhou!",
-                    "ganhou": 0,
-                    "valor": -jogador.getValorAposta()
-                })
+            if valorDealer > 21:
+                mensagens.append(prefixo + "Dealer estourou! Jogador ganhou!")
+                continue
 
-            if jogador.getValorMao() > self.__dealer.getValorMao() and self.__dealer.getValorMao() <= 21:
-                resultado.append({
-                    "message": f"{jogador.getNomeJogador()} tem {jogador.getValorMao()}, Dealer tem {self.__dealer.getValorMao()}. Jogador ganhou!",
-                    "ganhou": 1,
-                    "valor": jogador.getValorAposta()
-                })
+            if valorJogador == valorDealer:
+                mensagens.append(prefixo + "Empate!")
+                continue
 
-        resultado.append({
-            "message": "Resultado inesperado.",
-            "ganhou": 2,
-            "valor": 0
-        })
-        
-        return resultado
+            if valorJogador < valorDealer:
+                mensagens.append(prefixo + "Dealer ganhou!")
+                continue
+
+            if valorJogador > valorDealer:
+                mensagens.append(prefixo + "Jogador ganhou!")
+                continue
+
+        self.__finalizarJogo()
+        return "\n".join(mensagens)
 
     def getDict(self):
         return {
@@ -305,6 +262,46 @@ class Blackjack:
             ]
         }
 
+    def __restateJogo(self, idJogador, nomeJogador):
+        self.__jogadorHost = Jogador.newJogador(idJogador, nomeJogador)
+        self.__jogadores.append(self.__jogadorHost)
+        jogo = self.__blackjackRepo.consultarJogoIdJogador(idJogador)
+        
+        if jogo is None:
+            raise Exception("Jogador ainda não está em nenhum jogo")
+        
+        self.__idJogo = jogo.getId()
+        dealer = UsuarioRepo.newRepo().consultarPorUsuario("dealer")
+        self.__dealer = Jogador.newJogador(dealer.getId(), "dealer")
+        
+        cartasJogoJogador = self.__cartaJogadorRepo.consultarCartasJogador(jogo.getId(), jogo.getIdJogador())
+        cartasDealer = self.__cartaJogadorRepo.consultarCartasJogador(jogo.getId(), self.__dealer.getId())
+        
+        for carta in cartasJogoJogador:
+            self.__jogadorHost.addCard(self.__baralho.deal(carta.getIdCarta()))
+            
+        for carta in cartasDealer:
+            self.__dealer.addCard(self.__baralho.deal(carta.getIdCarta()))
+
+    def __mensagemRetorno(self):
+        cartasJogador = ", ".join([f"{c.getRank()} de {c.getSuit()}" for c in self.__jogadorHost.getCards()])
+        cartasDealer = ", ".join([f"{c.getRank()} de {c.getSuit()}" for c in self.__dealer.getCards()])
+        jogadasJogador = self.verificarJogadasJogador(self.__jogadorHost)
+        
+        retorno = (
+            f"Jogador {self.__jogadorHost.getNomeJogador()} tem: {cartasJogador} "
+            f"(valor da mão: {self.__jogadorHost.getValorMao()})\n"
+            f"Dealer tem: {cartasDealer} "
+            f"(valor da mão: {self.__dealer.getValorMao()})\n"
+            f"Jogadas possíveis: {jogadasJogador if jogadasJogador else 'Nenhuma'}"
+        )
+        
+        return retorno
+
     def __jogadaDealer(self):
         while self.verificarDealerPodeContinuar():
             self.__dealer.addCard(self.__baralho.deal())
+
+    def __finalizarJogo(self):
+        self.__cartaJogadorRepo.deletarTodasCartasJogo(self.__idJogo)
+        self.__blackjackRepo.deleteJogo(self.__idJogo)

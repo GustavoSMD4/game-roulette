@@ -63,6 +63,13 @@ class BlackjackRepo:
             (idJogo, jogador.getNome())
         )
         self.__conn.commit()
+        
+    def deleteJogo(self, idJogo: str):
+        self.__cursor.execute(
+            "DELETE FROM BLACKJACK WHERE ID = ?",
+            (idJogo,)
+        )
+        self.__conn.commit()
     
     def __formatar(self):
         headers = [desc[0].lower() for desc in self.__cursor.description]
