@@ -83,11 +83,26 @@ class Blackjack:
             return blackjack.verificarVencedor()
 
         if jogada == 1:
-            blackjack.__jogadorHost.addCard(blackjack.__baralho.deal())
+            if blackjack.__jogadorHost.getValorMao() >= 21:
+                raise Exception("Jogador não pode comprar")
+            
+            cartaAdicionar = blackjack.__baralho.deal()
+            blackjack.__jogadorHost.addCard(cartaAdicionar)
+            blackjack.__cartaJogadorRepo.createCarta(blackjack.__idJogo, blackjack.__jogadorHost.getId(), cartaAdicionar.getId())
+            
+            if blackjack.__jogadorHost.getValorMao() > 21:
+                blackjack.__jogadaDealer()
+                return blackjack.verificarVencedor()
+            
             return blackjack.__mensagemRetorno()
                     
         if jogada == 2:
-            blackjack.__jogadorHost.addCard(blackjack.__baralho.deal())
+            if len(blackjack.__jogadorHost.getCards()) > 2:
+                raise Exception("Jogador não pode dobrar")
+                
+            cartaAdicionar = blackjack.__baralho.deal()
+            blackjack.__jogadorHost.addCard(cartaAdicionar)
+            blackjack.__cartaJogadorRepo.createCarta(blackjack.__idJogo, blackjack.__jogadorHost.getId(), cartaAdicionar.getId())
             blackjack.__jogadaDealer()
             return blackjack.verificarVencedor()
                     
@@ -197,45 +212,50 @@ class Blackjack:
             cartasJogador = ", ".join([f"{c.getRank()} de {c.getSuit()}" for c in jogador.getCards()])
 
             prefixo = (
-                f"Dealer tem {valorDealer} ({cartasDealer}), "
-                f"{jogador.getNomeJogador()} tem {valorJogador} ({cartasJogador}). "
+                f"🎴 **Resultado da Rodada** 🎴\n\n"
+                f"👤 **Jogador {jogador.getNomeJogador()}**\n"
+                f"Cartas: {cartasJogador}\n"
+                f"Valor da mão: **{valorJogador}**\n\n"
+                f"🤵 **Dealer**\n"
+                f"Cartas: {cartasDealer}\n"
+                f"Valor da mão: **{valorDealer}**\n\n"
             )
 
             # regras
             if len(jogador.getCards()) == 2 and valorJogador == 21 and len(self.__dealer.getCards()) == 2 and valorDealer == 21:
-                mensagens.append(prefixo + "Ambos têm blackjack. Empate!")
+                mensagens.append(prefixo + "⚖️ Ambos têm **blackjack**. Resultado: **Empate!**")
                 continue
 
             if len(jogador.getCards()) == 2 and valorJogador == 21:
-                mensagens.append(prefixo + "Jogador tem blackjack! Jogador ganhou!")
+                mensagens.append(prefixo + "🏆 Jogador tem **blackjack**! **Jogador ganhou!**")
                 continue
 
             if len(self.__dealer.getCards()) == 2 and valorDealer == 21:
-                mensagens.append(prefixo + "Dealer tem blackjack! Dealer ganhou!")
+                mensagens.append(prefixo + "❌ Dealer tem **blackjack**! **Dealer ganhou!**")
                 continue
 
             if valorJogador > 21:
-                mensagens.append(prefixo + "Jogador estourou! Dealer ganhou!")
+                mensagens.append(prefixo + "💥 Jogador **estourou**! **Dealer ganhou!**")
                 continue
 
             if valorDealer > 21:
-                mensagens.append(prefixo + "Dealer estourou! Jogador ganhou!")
+                mensagens.append(prefixo + "💥 Dealer **estourou**! **Jogador ganhou!**")
                 continue
 
             if valorJogador == valorDealer:
-                mensagens.append(prefixo + "Empate!")
+                mensagens.append(prefixo + "⚖️ **Empate!**")
                 continue
 
             if valorJogador < valorDealer:
-                mensagens.append(prefixo + "Dealer ganhou!")
+                mensagens.append(prefixo + "❌ **Dealer ganhou!**")
                 continue
 
             if valorJogador > valorDealer:
-                mensagens.append(prefixo + "Jogador ganhou!")
+                mensagens.append(prefixo + "🏆 **Jogador ganhou!**")
                 continue
 
         self.__finalizarJogo()
-        return "\n".join(mensagens)
+        return "\n-----------------------------------------\n".join(mensagens)
 
     def getDict(self):
         return {
@@ -288,15 +308,18 @@ class Blackjack:
         cartasJogador = ", ".join([f"{c.getRank()} de {c.getSuit()}" for c in self.__jogadorHost.getCards()])
         cartasDealer = ", ".join([f"{c.getRank()} de {c.getSuit()}" for c in self.__dealer.getCards()])
         jogadasJogador = self.verificarJogadasJogador(self.__jogadorHost)
-        
+
         retorno = (
-            f"Jogador {self.__jogadorHost.getNomeJogador()} tem: {cartasJogador} "
-            f"(valor da mão: {self.__jogadorHost.getValorMao()})\n"
-            f"Dealer tem: {cartasDealer} "
-            f"(valor da mão: {self.__dealer.getValorMao()})\n"
-            f"Jogadas possíveis: {jogadasJogador if jogadasJogador else 'Nenhuma'}"
+            f"🎴 **Status da Rodada** 🎴\n\n"
+            f"👤 **Jogador {self.__jogadorHost.getNomeJogador()}**\n"
+            f"Cartas: {cartasJogador}\n"
+            f"Valor da mão: **{self.__jogadorHost.getValorMao()}**\n\n"
+            f"🤵 **Dealer**\n"
+            f"Cartas: {cartasDealer}\n"
+            f"Valor da mão: **{self.__dealer.getValorMao()}**\n\n"
+            f"✨ **Jogadas possíveis**: {jogadasJogador if jogadasJogador else 'Nenhuma'}"
         )
-        
+
         return retorno
 
     def __jogadaDealer(self):
