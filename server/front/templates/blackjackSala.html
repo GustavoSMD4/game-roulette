@@ -201,7 +201,7 @@
         let timerAviso = null;
         let apostando = false;
         let criandoSala = false;
-        let eraMinhaVez = false;
+        let focoAtual = "";
         const timersValor = new Map();
 
         function elemento(id) {
@@ -439,9 +439,9 @@
             const container = elemento('assentos');
             const mostrarResultado = dados.fase === "resultado";
 
-            // eu fico sempre na borda de baixo da mesa, com os botoes logo abaixo das minhas cartas
+            // a minha mao fica sempre em primeiro, logo abaixo do dealer: e a que eu preciso ver
             const jogadores = (dados.jogadores || []).slice()
-                .sort((a, b) => (Boolean(a.eu) === Boolean(b.eu) ? 0 : (a.eu ? 1 : -1)));
+                .sort((a, b) => (Boolean(a.eu) === Boolean(b.eu) ? 0 : (a.eu ? -1 : 1)));
 
             if (jogadores.length === 0) {
                 assentosDom.forEach((raiz, chave) => {
@@ -546,13 +546,6 @@
             const souDaRodada = Boolean(dados.meu && dados.meu.maos.length);
             const minhaVez = dados.fase === "jogando" && Boolean(dados.meu && dados.meu.minhaVez);
             const espera = dados.fase === "jogando" && souDaRodada && dados.turno && dados.turno.nome && !minhaVez;
-
-            if (minhaVez && !eraMinhaVez) {
-                // a mesa vive atualizando: so rola a tela quando a vez realmente chega
-                setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 120);
-            }
-
-            eraMinhaVez = minhaVez;
 
             if (!minhaVez && !espera) {
                 card.style.display = 'none';
@@ -744,6 +737,37 @@
             renderizarPresenca(dados);
             validarAposta();
             adicionarMensagens(dados.chat);
+            focarFase(dados);
+        }
+
+        // A mesa se move sozinha: leva a tela para onde a acao esta (mao da vez, dealer, resultado, aposta)
+        function focarFase(dados) {
+            const fase = dados.fase;
+            const vez = fase === "jogando" && dados.turno && dados.turno.idJogador
+                ? String(dados.turno.idJogador)
+                : "";
+            const chave = fase + "|" + vez + "|" + (dados.numeroRodada || "");
+
+            if (chave === focoAtual) {
+                return;
+            }
+
+            focoAtual = chave;
+
+            const alvos = {
+                jogando: () => assentosDom.get(vez) || elemento('assentos'),
+                dealer: () => document.querySelector('.mao-dealer'),
+                resultado: () => elemento('resultadoGeral'),
+                apostando: () => elemento('cardAposta')
+            };
+
+            const alvo = (alvos[fase] || (() => null))();
+
+            if (!alvo) {
+                return;
+            }
+
+            setTimeout(() => alvo.scrollIntoView({ behavior: 'smooth', block: 'center' }), 120);
         }
 
         function atualizarBarra() {

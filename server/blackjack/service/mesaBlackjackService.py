@@ -6,7 +6,11 @@ from classes.baralhoFromDb import BaralhoDb
 from classes.blackjack import Blackjack
 from classes.carta import Carta
 from classes.jogador import Jogador
+from server.blackjack.models.acaoBlackjackModel import AcaoBlackjack
+from server.blackjack.models.blackjackModel import BlackjackModel
 from server.blackjack.models.resultadoBlackjackModel import ResultadoBlackjack
+from server.blackjack.repository.acaoBlackjackRepo import AcaoBlackjackRepo
+from server.blackjack.repository.blackjackRepo import BlackjackRepo
 from server.blackjack.repository.resultadoBlackjackRepo import ResultadoBlackjackRepo
 from server.blackjack.repository.rodadaBlackjackRepo import RodadaBlackjackRepo
 from server.blackjack.repository.salaBlackjackRepo import SalaBlackjackRepo
@@ -44,16 +48,20 @@ class MesaBlackjackService:
     """
 
     def __init__(self, salaRepo: SalaBlackjackRepo, rodadaRepo: RodadaBlackjackRepo,
-                 resultadoRepo: ResultadoBlackjackRepo, usuarioRepo: UsuarioRepo):
+                 resultadoRepo: ResultadoBlackjackRepo, usuarioRepo: UsuarioRepo,
+                 acaoRepo: AcaoBlackjackRepo = None, blackjackRepo: BlackjackRepo = None):
         self.__salaRepo = salaRepo
         self.__rodadaRepo = rodadaRepo
         self.__resultadoRepo = resultadoRepo
         self.__usuarioRepo = usuarioRepo
+        self.__acaoRepo = acaoRepo or AcaoBlackjackRepo.newRepo()
+        self.__blackjackRepo = blackjackRepo or BlackjackRepo.newBlackjackRepo()
 
     @classmethod
     def newService(cls):
         return cls(SalaBlackjackRepo.newRepo(), RodadaBlackjackRepo.newRepo(),
-                   ResultadoBlackjackRepo.newRepo(), UsuarioRepo.newRepo())
+                   ResultadoBlackjackRepo.newRepo(), UsuarioRepo.newRepo(),
+                   AcaoBlackjackRepo.newRepo(), BlackjackRepo.newBlackjackRepo())
 
     # ------------------------------------------------------------- sala
 
@@ -193,11 +201,16 @@ class MesaBlackjackService:
 
     def __aplicarJogada(self, comando, jogador, mao, estado, usuario):
         if comando == "comprar":
-            mao["cartas"].append(self.__darCarta(estado))
+            carta = self.__darCarta(estado)
+            mao["cartas"].append(carta)
+            self.__registrarPasso(estado, jogador, mao["indice"], "comprar", "jogador", carta,
+                                  self.__valorMao(mao["cartas"]))
             return
 
         if comando == "parar":
             mao["encerrada"] = True
+            self.__registrarPasso(estado, jogador, mao["indice"], "parar", "jogador", None,
+                                  self.__valorMao(mao["cartas"]))
             return
 
         if comando == "dobrar":
@@ -209,8 +222,11 @@ class MesaBlackjackService:
 
             self.__debitar(usuario, mao["aposta"])
             mao["aposta"] = round(mao["aposta"] * 2, 2)
-            mao["cartas"].append(self.__darCarta(estado))
+            carta = self.__darCarta(estado)
+            mao["cartas"].append(carta)
             mao["encerrada"] = True
+            self.__registrarPasso(estado, jogador, mao["indice"], "dobrar", "jogador", carta,
+                                  self.__valorMao(mao["cartas"]))
             return
 
         cartas = mao["cartas"]
@@ -227,11 +243,19 @@ class MesaBlackjackService:
         self.__debitar(usuario, mao["aposta"])
 
         separada = cartas.pop(1)
-        mao["cartas"].append(self.__darCarta(estado))
+        cartaAtual = self.__darCarta(estado)
+        mao["cartas"].append(cartaAtual)
 
         nova = self.__novaMao(len(jogador["maos"]), mao["aposta"], [separada, self.__darCarta(estado)])
         jogador["maos"].insert(jogador["indiceMaoAtual"] + 1, nova)
         self.__renumerarMaos(jogador)
+
+        # o replay e gravado depois de renumerar: o indice da mao nova so existe a partir dai
+        self.__registrarPasso(estado, jogador, mao["indice"], "dividir", "jogador", None,
+                              self.__valorMao(mao["cartas"]))
+        self.__registrarPasso(estado, jogador, mao["indice"], "inicio", "jogador", cartaAtual,
+                              self.__valorMao(mao["cartas"]))
+        self.__registrarInicioDaMao(estado, jogador, nova)
 
     # ------------------------------------------------------------- estado
 
@@ -299,8 +323,13 @@ class MesaBlackjackService:
             jogador["finalizado"] = False
             jogador["lucro"] = None
             jogador["resultados"] = []
+            self.__abrirJogoDaMesa(rodada, jogador)
+            self.__registrarInicioDaMao(estado, jogador, jogador["maos"][0])
 
         estado["dealer"] = self.__darCartas(estado, 2)
+
+        for carta in estado["dealer"]:
+            self.__registrarCartaDealer(estado, carta, "inicio")
         estado["participantes"] = None
         estado["turno"] = 0
         estado["mensagem"] = "Cartas dadas! Cada um joga na sua vez."
@@ -404,6 +433,11 @@ class MesaBlackjackService:
             jogador["lucro"] = round(recebido - apostado, 2)
             jogador["finalizado"] = True
             totalApostado = round(totalApostado + apostado, 2)
+
+            if jogador.get("idJogo"):
+                # o registro do jogo só existia para o replay poder agrupar as mãos dessa rodada
+                self.__blackjackRepo.deleteJogo(jogador["idJogo"])
+                jogador["idJogo"] = None
 
             if jogador["lucro"] > 0:
                 ganharam += 1
@@ -574,7 +608,9 @@ class MesaBlackjackService:
             if valor >= 17:
                 return
 
-            estado["dealer"].append(self.__darCarta(estado))
+            carta = self.__darCarta(estado)
+            estado["dealer"].append(carta)
+            self.__registrarCartaDealer(estado, carta, "dealer")
 
     # ------------------------------------------------------------- cartas
 
@@ -627,7 +663,7 @@ class MesaBlackjackService:
 
     def __registrarHistorico(self, jogador, mao, valorDealer, motivo, pago, lucro):
         historico = ResultadoBlackjack.newModel()
-        historico.setIdJogo(None)
+        historico.setIdJogo(jogador.get("idJogo"))
         historico.setIdJogador(jogador["idJogador"])
         historico.setIndiceMao(mao.get("indice", 0))
         historico.setValorAposta(mao["aposta"])
@@ -638,6 +674,49 @@ class MesaBlackjackService:
         historico.setLucro(lucro)
         historico.setDataHora(agoraBrasilia())
         self.__resultadoRepo.create(historico)
+
+    # ------------------------------------------------------------- replay da mao
+
+    def __abrirJogoDaMesa(self, rodada, jogador):
+        """Cria o jogo que agrupa os passos da mão: é o que o histórico usa para o replay.
+
+        O dono fica marcado como "mesa", então o blackjack solo nunca confunde esse registro
+        com um jogo em andamento.
+        """
+        jogo = self.__blackjackRepo.createNovoJogo(BlackjackModel.newBlackjackModel(dict(
+            idJogadorHost=f"mesa:{rodada.getIdSala()}",
+            valorAposta=round(float(jogador.get("apostaTotal") or jogador.get("aposta") or 0), 2)
+        )))
+        jogador["idJogo"] = jogo.getId()
+
+    def __registrarInicioDaMao(self, estado, jogador, mao):
+        for posicao, carta in enumerate(mao["cartas"]):
+            self.__registrarPasso(estado, jogador, mao["indice"], "inicio", "jogador", carta,
+                                  self.__valorMao(mao["cartas"][:posicao + 1]))
+
+    def __registrarCartaDealer(self, estado, carta, acao):
+        """As cartas do dealer valem para todas as mãos: no replay ficam com índice -1."""
+        for idJogador in estado.get("ordem") or []:
+            jogador = estado["jogadores"][idJogador]
+
+            if jogador.get("idJogo"):
+                self.__registrarPasso(estado, jogador, -1, acao, "dealer", carta, 0)
+
+    def __registrarPasso(self, estado, jogador, indiceMao, acao, dono, carta=None, valorMao=0):
+        if not jogador or not jogador.get("idJogo"):
+            return
+
+        registro = AcaoBlackjack.newModel()
+        registro.setIdJogo(jogador["idJogo"])
+        registro.setIdJogador(jogador["idJogador"])
+        registro.setIndiceMao(indiceMao)
+        registro.setAcao(acao)
+        registro.setDono(dono)
+        registro.setCarta(carta.get("nomeImagem") if carta else None)
+        registro.setValorJogador(valorMao)
+        registro.setValorDealer(self.__valorMao(estado["dealer"]) if estado.get("dealer") else 0)
+        registro.setDataHora(agoraBrasilia())
+        self.__acaoRepo.create(registro)
 
     def __debitar(self, usuario, valor):
         usuario.setSaldo(round(usuario.getSaldo() - valor, 2))
