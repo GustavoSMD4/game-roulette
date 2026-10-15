@@ -313,6 +313,11 @@
                 if (virada) {
                     virada.remove();
                 }
+            } else {
+                // carta fechada na mesa: o valor so pode contar o que esta virado
+                cancelarValor(elemento('valorDealer'));
+                elemento('valorDealer').textContent = visiveis.length ? dealer.valor : 0;
+                return;
             }
 
             animarValor(elemento('valorDealer'), novas, dealer.valoresParciais, dealer.valorFinal, ATRASO_CARTA);
@@ -328,6 +333,19 @@
 
             return '<span class="selo-resultado ' + classe + '">' + verbo +
                 (mao.lucro === 0 ? '' : ' ' + comSinal(mao.lucro)) + '</span>';
+        }
+
+        // durante a rodada o selo explica por que a mao saiu de jogo
+        function seloDaMao(mao) {
+            if (mao.valor > 21) {
+                return '<span class="selo-resultado negativo">estourou ' + mao.valor + '</span>';
+            }
+
+            if (!mao.encerrada) {
+                return '';
+            }
+
+            return '<span class="selo-resultado neutro">' + (mao.valor === 21 ? '21' : 'parou ' + mao.valor) + '</span>';
         }
 
         const assentosDom = new Map();
@@ -409,7 +427,7 @@
                 sincronizarCartas(linha.querySelector('.cartas'), mao.cartas || [], ATRASO_CARTA);
                 linha.querySelector('.valor-mao').textContent = mao.valor;
                 linha.querySelector('.aposta-mao').textContent = formatarReal(mao.aposta);
-                linha.querySelector('.motivo-mao').innerHTML = mostrarResultado ? seloResultado(mao) : '';
+                linha.querySelector('.motivo-mao').innerHTML = mostrarResultado ? seloResultado(mao) : seloDaMao(mao);
             });
 
             while (containerMaos.children.length > jogador.maos.length) {
@@ -550,8 +568,12 @@
             elemento('avisoAcoes').textContent = '';
 
             if (espera) {
+                const minhasMaosFechadas = (dados.meu.maos || []).every(mao => mao.encerrada);
+
                 elemento('tituloDecisao').textContent = 'Vez de ' + dados.turno.nome;
-                elemento('subtituloDecisao').textContent = 'Espere a jogada dele para jogar a sua mão';
+                elemento('subtituloDecisao').textContent = minhasMaosFechadas
+                    ? 'Sua mão já acabou nesta rodada'
+                    : 'Espere a jogada dele para jogar a sua mão';
                 container.innerHTML = '<p class="fonte">Aguardando a jogada de <strong>' +
                     escapar(dados.turno.nome) + '</strong>...</p>';
                 return;
