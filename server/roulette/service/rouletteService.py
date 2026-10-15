@@ -272,20 +272,8 @@ class RouletteService:
         return self.__executarJogada(type, usuario, apostaJogador, valorAposta)["mensagem"]
 
     def __interpretarAposta(self, aposta):
-        try:
-            numero = int(aposta)
-
-            if numero not in range(0, 37):
-                raise ValueError
-
-            return numero, "number"
-        except (TypeError, ValueError):
-            cor = str(aposta).strip().lower()
-
-            if cor not in ["red", "black"]:
-                raise Exception("Aposta inválida: use red, black ou um número de 0 a 36")
-
-            return cor, "color"
+        # Regra de aposta da roleta fica na classe Roulette, para o modo solo e a mesa usarem a mesma
+        return Roulette.newRoulette().interpretarAposta(aposta)
 
     def __validarValorAposta(self, valorAposta):
         try:

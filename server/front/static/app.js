@@ -57,6 +57,15 @@ function formatarReal(valor) {
     return Number(valor || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+function escapar(texto) {
+    return String(texto === null || texto === undefined ? "" : texto)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
 function exibirMensagem(elemento, texto, tipo) {
     elemento.textContent = texto;
     elemento.className = "mensagem " + (tipo || "");

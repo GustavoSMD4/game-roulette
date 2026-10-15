@@ -1,6 +1,8 @@
 from classes.blackjack import Blackjack
 from server.blackjack.repository.blackjackRepo import BlackjackRepo
 from server.blackjack.service.blackjackService import BlackjackService
+from server.games.roulette import Roulette
+from server.roulette.service.mesaRoletaService import MesaRoletaService
 from server.roulette.service.rouletteService import RouletteService
 from server.usuario.model.usuario import Usuario
 from server.usuario.repository.usuarioRepo import UsuarioRepo
@@ -9,17 +11,20 @@ from server.usuario.service.usuarioService import UsuarioService
 
 class FrontService:
     def __init__(self, usuarioRepo: UsuarioRepo, usuarioService: UsuarioService, blackjackRepo: BlackjackRepo,
-                 rouletteService: RouletteService, blackjackService: BlackjackService):
+                 rouletteService: RouletteService, blackjackService: BlackjackService,
+                 mesaRoletaService: MesaRoletaService):
         self.__usuarioRepo = usuarioRepo
         self.__usuarioService = usuarioService
         self.__blackjackRepo = blackjackRepo
         self.__rouletteService = rouletteService
         self.__blackjackService = blackjackService
+        self.__mesaRoletaService = mesaRoletaService
 
     @classmethod
     def newService(cls):
         return cls(UsuarioRepo.newRepo(), UsuarioService.newService(), BlackjackRepo.newBlackjackRepo(),
-                   RouletteService.newService(), BlackjackService.blackjackService())
+                   RouletteService.newService(), BlackjackService.blackjackService(),
+                   MesaRoletaService.newService())
 
     def login(self, req: dict):
         usuario = req.get("usuario")
@@ -215,4 +220,39 @@ class FrontService:
             "idUsuario": self.__converterId(req.get("idUsuario")),
             "bet": req.get("bet"),
             "bet_amount": req.get("bet_amount")
+        })
+
+    def estadoMesaRoleta(self, req: dict):
+        return self.__mesaRoletaService.estado({
+            "idUsuario": req.get("idUsuario"),
+            "codigo": req.get("codigo"),
+            "desdeChat": req.get("desdeChat")
+        })
+
+    def criarSessaoRoleta(self, req: dict):
+        return self.__mesaRoletaService.criarSessao({
+            "idUsuario": req.get("idUsuario"),
+            "nome": req.get("nome")
+        })
+
+    def enviarMensagemRoleta(self, req: dict):
+        return self.__mesaRoletaService.enviarMensagem({
+            "idUsuario": req.get("idUsuario"),
+            "codigo": req.get("codigo"),
+            "texto": req.get("texto")
+        })
+
+    def numerosMesaRoleta(self):
+        """Mapa número -> cor usado para desenhar o pano da mesa, direto da regra da roleta."""
+        valores = Roulette.newRoulette().getValues()
+
+        return {"numeros": [{"numero": numero, "cor": valores.get(numero)} for numero in range(0, 37)]}
+
+    def apostarMesaRoleta(self, req: dict):
+        return self.__mesaRoletaService.apostar({
+            "idUsuario": req.get("idUsuario"),
+            "bet": req.get("bet"),
+            "bet_amount": req.get("bet_amount"),
+            "idRodada": req.get("idRodada"),
+            "codigo": req.get("codigo")
         })

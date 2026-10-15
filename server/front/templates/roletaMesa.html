@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roleta ao Vivo - Game Roulette</title>
+    <link rel="stylesheet" href="/front/static/style.css">
+</head>
+
+<body class="com-sidebar">
+    <button class="btn-menu" id="btnMenu" aria-label="Abrir menu">&#9776;</button>
+    <div class="backdrop" id="backdrop"></div>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-marca"><span class="marca-texto">Game Roulette</span></div>
+
+        <nav class="sidebar-nav">
+            <a class="item-nav" href="/front/roleta"><span class="rotulo-nav">Roleta</span></a>
+            <a class="item-nav" href="/front/roleta-mesa"><span class="rotulo-nav">Roleta ao Vivo</span></a>
+            <a class="item-nav" href="/front/blackjack"><span class="rotulo-nav">Blackjack</span></a>
+            <a class="item-nav" href="/front/estatisticas"><span class="rotulo-nav">Estatísticas</span></a>
+            <a class="item-nav" href="/front/conta"><span class="rotulo-nav">Minha conta</span></a>
+        </nav>
+
+        <div class="sidebar-rodape">
+            <div class="usuario">
+                <span id="nomeJogador">-</span>
+                <strong class="saldo" id="saldoJogador">-</strong>
+            </div>
+
+            <button class="secundario largo" onclick="sair()"><span class="rotulo-botao">Sair</span></button>
+        </div>
+    </aside>
+
+    <button class="btn-recolher" id="btnRecolher" aria-label="Recolher menu"></button>
+
+    <h1 class="titulo-pagina" id="tituloPagina">Roleta ao Vivo</h1>
+
+    <div class="container largo mesa-larga">
+        <section class="faixa-sessao" id="faixaSessao" style="display: none;">
+            <div class="faixa-info">
+                <span class="tag-sessao">Mesa privada</span>
+                <strong id="nomeSessao">-</strong>
+                <span class="codigo-sessao">Código <b id="codigoSessao">-</b></span>
+                <span class="fonte">Expira em <strong id="tempoSessao">-</strong></span>
+            </div>
+
+            <div class="faixa-acoes">
+                <input type="text" id="linkConvite" readonly aria-label="Link de convite">
+                <button class="secundario" id="btnCopiarLink">Copiar link</button>
+                <a class="botao-ghost" href="/front/roleta-mesa">Sair</a>
+            </div>
+        </section>
+
+        <section class="card-stats sessao-criar" id="cardCriarSessao" style="display: none;">
+            <h2>Jogar com os amigos</h2>
+            <p class="fonte">Crie uma mesa privada, receba um link de convite e jogue só com quem você chamar.
+                A sessão dura 1 hora e tem chat.</p>
+            <button id="btnCriarSessao">Criar sessão privada (1 hora)</button>
+        </section>
+
+        <section class="card-stats sessao-expirada" id="cardExpirada" style="display: none;">
+            <h2>A sessão expirou</h2>
+            <p class="fonte" id="textoExpirada">Esta mesa privada chegou ao fim de 1 hora.</p>
+            <button id="btnNovaSessao">Criar nova sessão</button>
+        </section>
+
+        <div class="mesa-grade">
+            <div class="coluna-jogo">
+                <section class="card-stats destaque-mesa">
+                    <div class="mesa-topo">
+                        <div>
+                            <span class="badge-fase apostando" id="badgeFase">apostas abertas</span>
+                            <h2 id="tituloMesa">Mesa compartilhada</h2>
+                            <p class="fonte">Rodada <span id="idRodada">-</span> - <span id="faseTexto">aguardando</span></p>
+                        </div>
+
+                        <div class="contador-bloco">
+                            <strong id="contador">0</strong>
+                            <span id="contadorRotulo">para fechar as apostas</span>
+                        </div>
+                    </div>
+
+                    <div class="barra-fase"><span id="barraFase"></span></div>
+
+                    <div class="palco-mesa">
+                        <div class="numero-grande" id="numeroGrande">?</div>
+                        <span class="fonte-roda" id="legendaRoda">Apostas abertas</span>
+                    </div>
+
+                    <div class="historico-numeros" id="historicoNumeros"></div>
+                </section>
+
+                <section class="card-stats">
+                    <h2>Fazer aposta</h2>
+                    <p class="fonte">Escolha a ficha, depois uma cor ou um número. Todos jogam no mesmo sorteio.</p>
+
+                    <div class="fichas" id="fichas"></div>
+
+                    <div class="botoes-cor">
+                        <button class="botao-cor red" data-cor="red">Red <small>paga 2x</small></button>
+                        <button class="botao-cor black" data-cor="black">Black <small>paga 2x</small></button>
+                    </div>
+
+                    <div class="grade-numeros" id="gradeNumeros"></div>
+
+                    <div class="resumo-apostas">
+                        <div class="item-stats">
+                            <span class="rotulo">Minhas apostas</span>
+                            <strong id="meuTotal">R$ 0,00</strong>
+                        </div>
+                        <div class="item-stats">
+                            <span class="rotulo">Total na mesa</span>
+                            <strong id="totalMesa">R$ 0,00</strong>
+                        </div>
+                        <div class="item-stats">
+                            <span class="rotulo">Saldo</span>
+                            <strong id="meuSaldo">-</strong>
+                        </div>
+                    </div>
+
+                    <div id="minhasApostas" class="lista-apostas"></div>
+
+                    <div id="mensagem" class="mensagem"></div>
+                </section>
+            </div>
+
+            <aside class="coluna-pessoas">
+                <section class="card-stats" id="cardApostasRodada">
+                    <h2 id="tituloApostasRodada">Apostas da rodada</h2>
+                    <p class="fonte" id="fonteApostasRodada">Quem já apostou e quanto</p>
+
+                    <div id="apostasRodada" class="lista-apostas-rodada"></div>
+                </section>
+
+                <section class="card-stats" id="cardParticipantes">
+                    <div class="titulo-com-contagem">
+                        <h2>Na mesa</h2>
+                        <span class="contagem" id="contagemPessoas">0</span>
+                    </div>
+                    <p class="fonte">Todos que estão com a mesa aberta agora (<span id="contagemApostando">0</span> apostando)</p>
+
+                    <div id="listaParticipantes" class="lista-participantes"></div>
+                </section>
+            </aside>
+        </div>
+    </div>
+
+    <div class="chat-aviso" id="chatAviso" hidden>
+        <strong id="chatAvisoNome"></strong>
+        <span id="chatAvisoTexto"></span>
+    </div>
+
+    <button class="chat-flutuante" id="btnChatFlutuante" hidden>
+        <span class="chat-icone">&#128172;</span>
+        <span>Chat</span>
+        <span class="chat-badge" id="chatBadge" hidden>0</span>
+    </button>
+
+    <section class="chat-painel" id="chatPainel" hidden>
+        <div class="chat-cabecalho">
+            <div>
+                <strong>Chat da mesa</strong>
+                <span class="fonte" id="chatSubtitulo">Só nesta sessão</span>
+            </div>
+            <button class="chat-fechar" id="btnFecharChat" aria-label="Fechar chat">&#10005;</button>
+        </div>
+
+        <div class="chat-mensagens" id="chatMensagens">
+            <p class="fonte chat-vazio">Nenhuma mensagem ainda. Diga oi!</p>
+        </div>
+
+        <form class="chat-form" id="formChat">
+            <input type="text" id="chatTexto" maxlength="200" placeholder="Escreva uma mensagem" autocomplete="off">
+            <button type="submit">Enviar</button>
+        </form>
+    </section>
+
+    <script src="/front/static/app.js"></script>
+    <script>
+        const usuario = exigirUsuario();
+
+        const FICHAS = [1, 5, 10, 25, 50, 100];
+        const INTERVALO_POLL = 1200;
+        const INTERVALO_POLL_OCULTO = 5000;
+        const DURACAO_AVISO = 4500;
+
+        const codigoSessao = (new URLSearchParams(window.location.search).get('codigo') || '').trim().toUpperCase();
+
+        const ROTULOS_CONTADOR = {
+            apostando: "para fechar as apostas",
+            girando: "girando",
+            resultado: "para a próxima rodada"
+        };
+
+        const TITULOS_APOSTAS = {
+            apostando: ["Apostas da rodada", "Quem já apostou e quanto"],
+            girando: ["Apostas fechadas", "Aguardando o sorteio"],
+            resultado: ["Resultado da rodada", "Quem ganhou e quem perdeu"]
+        };
+
+        let valoresFicha = FICHAS[1];
+        let estadoAtual = null;
+        let cores = {};
+        let prazoFase = null;
+        let prazoSessao = null;
+        let ultimoChat = 0;
+        let naoLidas = 0;
+        let chatAberto = false;
+        let primeiraCargaChat = true;
+        let timerPoll = null;
+        let timerGiro = null;
+        let timerContador = null;
+        let timerAviso = null;
+        let apostando = false;
+        let criandoSessao = false;
+
+        function elemento(id) {
+            return document.getElementById(id);
+        }
+
+        function nomeFase(fase) {
+            if (fase === "apostando") {
+                return "apostas abertas";
+            }
+
+            if (fase === "girando") {
+                return "roleta girando";
+            }
+
+            if (fase === "expirada") {
+                return "sessão encerrada";
+            }
+
+            return "resultado da rodada";
+        }
+
+        function nomeAposta(aposta, tipo) {
+            return tipo === "number" ? "número " + aposta : aposta;
+        }
+
+        function classeLucro(valor) {
+            return valor > 0 ? "positivo" : (valor < 0 ? "negativo" : "neutro");
+        }
+
+        function comSinal(valor) {
+            return (valor > 0 ? "+" : "") + formatarReal(valor);
+        }
+
+        function inicial(nome) {
+            return String(nome || "?").trim().slice(0, 1).toUpperCase();
+        }
+
+        function linkDeConvite() {
+            return window.location.origin + "/front/roleta-mesa?codigo=" + encodeURIComponent(codigoSessao);
+        }
+
+        // ------------------------------------------------------------- mesa
+
+        async function carregarNumeros() {
+            const dados = await api('/front/api/roleta-mesa/numeros', 'GET');
+
+            dados.numeros.forEach(item => {
+                cores[item.numero] = item.cor;
+            });
+
+            elemento('gradeNumeros').innerHTML = dados.numeros.map(item =>
+                '<button class="' + item.cor + '" data-numero="' + item.numero + '">' + item.numero + '</button>'
+            ).join('');
+
+            elemento('fichas').innerHTML = FICHAS.map(valor =>
+                '<button class="ficha' + (valor === valoresFicha ? ' ativa' : '') + '" data-ficha="' + valor + '">' + formatarReal(valor) + '</button>'
+            ).join('');
+        }
+
+        function renderizarHistorico(historico) {
+            if (!historico || historico.length === 0) {
+                elemento('historicoNumeros').innerHTML = '<span class="fonte">Nenhuma rodada sorteada ainda.</span>';
+                return;
+            }
+
+            elemento('historicoNumeros').innerHTML = historico.map(item =>
+                '<span class="numero-historico ' + (item.cor || '') + '" title="Rodada ' + item.idRodada + '">' + item.numero + '</span>'
+            ).join('');
+        }
+
+        function ajustarBloqueio(fase) {
+            const podeApostar = fase === "apostando";
+
+            document.querySelectorAll('[data-numero], [data-cor]').forEach(botao => {
+                botao.disabled = !podeApostar;
+            });
+
+            elemento('gradeNumeros').classList.toggle('bloqueado', !podeApostar);
+        }
+
+        function animarRoda(dados) {
+            const roda = elemento('numeroGrande');
+
+            if (dados.fase === "girando") {
+                // O numero sorteado ja esta no servidor, mas so aparece no fim do giro
+                elemento('legendaRoda').textContent = 'Girando...';
+
+                if (!timerGiro) {
+                    timerGiro = setInterval(() => {
+                        roda.textContent = Math.floor(Math.random() * 37);
+                        roda.className = 'numero-grande girando';
+                    }, 70);
+                }
+
+                return;
+            }
+
+            pararGiro();
+
+            if (dados.expirada) {
+                roda.textContent = '-';
+                roda.className = 'numero-grande';
+                elemento('legendaRoda').textContent = 'Sessão encerrada';
+                return;
+            }
+
+            if (dados.fase === "resultado" && dados.sorteada) {
+                roda.textContent = dados.numero;
+                roda.className = 'numero-grande ' + (dados.cor || '');
+                elemento('legendaRoda').textContent = dados.numero + ' - ' + (dados.cor || '');
+                return;
+            }
+
+            roda.textContent = '?';
+            roda.className = 'numero-grande';
+            elemento('legendaRoda').textContent = 'Apostas abertas por ' + (dados.duracao ? dados.duracao.aposta : 20) + ' segundos';
+        }
+
+        function pararGiro() {
+            clearInterval(timerGiro);
+            timerGiro = null;
+        }
+
+        function destacarNumeroSorteado(dados) {
+            document.querySelectorAll('[data-numero]').forEach(botao => {
+                botao.classList.toggle('sorteado',
+                    Boolean(dados.sorteada) && dados.fase === "resultado" && Number(botao.getAttribute('data-numero')) === Number(dados.numero));
+            });
+        }
+
+        function renderizarMinhasApostas(dados, resultadoVisivel) {
+            const apostas = dados.minhasApostas || [];
+
+            if (apostas.length === 0) {
+                elemento('minhasApostas').innerHTML = '<p class="fonte">Você ainda não apostou nesta rodada.</p>';
+                return;
+            }
+
+            const pago = resultadoVisivel && apostas.every(aposta => aposta.ganhou !== null && aposta.ganhou !== undefined);
+
+            elemento('minhasApostas').innerHTML = agruparPorPonto(apostas)
+                .map(ponto => linhaGrupoAposta(ponto, pago))
+                .join('');
+        }
+
+        // ------------------------------------------------------------- apostas da rodada
+
+        function arredondar(valor) {
+            return Math.round((Number(valor) + Number.EPSILON) * 100) / 100;
+        }
+
+        function agruparApostas(apostas) {
+            const jogadores = {};
+
+            (apostas || []).forEach(aposta => {
+                const chave = String(aposta.idJogador);
+                const jogador = jogadores[chave] || (jogadores[chave] = {
+                    idJogador: chave,
+                    nome: aposta.nome,
+                    total: 0,
+                    recebido: 0,
+                    lucro: 0,
+                    quantidade: 0,
+                    pago: true,
+                    pontos: []
+                });
+
+                jogador.total = arredondar(jogador.total + aposta.valorAposta);
+                jogador.recebido = arredondar(jogador.recebido + (aposta.valorRecebido || 0));
+                jogador.lucro = arredondar(jogador.lucro + (aposta.lucro || 0));
+                jogador.quantidade++;
+                jogador.pago = jogador.pago && aposta.ganhou !== null && aposta.ganhou !== undefined;
+                jogador.pontos.push(aposta);
+            });
+
+            return Object.keys(jogadores).map(chave => {
+                const jogador = jogadores[chave];
+                jogador.resumo = agruparPorPonto(jogador.pontos);
+                return jogador;
+            }).sort((a, b) => b.total - a.total || String(a.nome).localeCompare(String(b.nome)));
+        }
+
+        // Junta apostas iguais (mesma cor ou mesmo numero) numa linha so
+        function agruparPorPonto(apostas) {
+            const pontos = {};
+
+            apostas.forEach(aposta => {
+                const chave = aposta.tipo + "|" + aposta.aposta;
+                const ponto = pontos[chave] || (pontos[chave] = {
+                    aposta: aposta.aposta,
+                    tipo: aposta.tipo,
+                    quantidade: 0,
+                    total: 0,
+                    recebido: 0,
+                    lucro: 0,
+                    ganhou: 0,
+                    valores: []
+                });
+
+                ponto.quantidade++;
+                ponto.total = arredondar(ponto.total + aposta.valorAposta);
+                ponto.recebido = arredondar(ponto.recebido + (aposta.valorRecebido || 0));
+                ponto.lucro = arredondar(ponto.lucro + (aposta.lucro || 0));
+                ponto.ganhou += aposta.ganhou === 1 ? 1 : 0;
+
+                if (!ponto.valores.includes(aposta.valorAposta)) {
+                    ponto.valores.push(aposta.valorAposta);
+                }
+            });
+
+            return Object.keys(pontos).map(chave => pontos[chave]).sort((a, b) => b.total - a.total);
+        }
+
+        function linhaGrupoAposta(ponto, pago) {
+            const vezes = ponto.quantidade > 1 ? '<span class="aposta-vezes">&times;' + ponto.quantidade + '</span>' : '';
+            const unitario = ponto.quantidade > 1 && ponto.valores.length === 1
+                ? '<span class="fonte">' + formatarReal(ponto.valores[0]) + ' cada</span>'
+                : '';
+
+            let resultado = '<span class="pendente">em jogo</span>';
+
+            if (pago) {
+                resultado = ponto.ganhou > 0
+                    ? '<span class="positivo">ganhou ' + comSinal(ponto.lucro) + '</span>'
+                    : '<span class="negativo">perdeu ' + formatarReal(ponto.total) + '</span>';
+            }
+
+            return '<div class="aposta-item">' +
+                '<span class="valor-aposta ' + (ponto.tipo === 'number' ? (cores[Number(ponto.aposta)] || '') : ponto.aposta) + '">' +
+                nomeAposta(ponto.aposta, ponto.tipo) + vezes + '</span>' +
+                '<span class="aposta-valor"><strong>' + formatarReal(ponto.total) + '</strong>' + unitario + '</span>' +
+                resultado +
+                '</div>';
+        }
+
+        function renderizarApostasRodada(dados, resultadoVisivel) {
+            const titulos = TITULOS_APOSTAS[dados.fase] || TITULOS_APOSTAS.apostando;
+            const grupos = agruparApostas(dados.apostas);
+
+            elemento('tituloApostasRodada').textContent = titulos[0];
+            elemento('fonteApostasRodada').textContent = titulos[1];
+
+            if (grupos.length === 0) {
+                elemento('apostasRodada').innerHTML = '<p class="fonte">Ninguém apostou nesta rodada ainda.</p>';
+                return;
+            }
+
+            const pago = resultadoVisivel;
+            const totalApostas = grupos.reduce((soma, grupo) => soma + grupo.quantidade, 0);
+
+            const cartoes = grupos.map(grupo => {
+                const eu = String(grupo.idJogador) === String(usuario.id);
+                const situacao = pago
+                    ? '<span class="' + classeLucro(grupo.lucro) + '">' + comSinal(grupo.lucro) + '</span>'
+                    : '<span class="pendente">em jogo</span>';
+
+                return '<div class="aposta-jogador' + (eu ? ' eu' : '') + '">' +
+                    '<div class="aposta-jogador-topo">' +
+                    '<strong>' + escapar(grupo.nome) + (eu ? ' <span class="tag-voce">você</span>' : '') + '</strong>' +
+                    '<span class="fonte">' + formatarReal(grupo.total) + ' em ' + grupo.quantidade +
+                    (grupo.quantidade > 1 ? ' apostas' : ' aposta') + '</span>' +
+                    situacao +
+                    '</div>' +
+                    '<div class="aposta-itens">' + grupo.resumo.map(ponto => linhaGrupoAposta(ponto, pago)).join('') + '</div>' +
+                    '</div>';
+            }).join('');
+
+            elemento('apostasRodada').innerHTML = cartoes +
+                '<p class="fonte total-rodada">Total na mesa: <strong>' + formatarReal(dados.totalNaMesa) + '</strong> em ' +
+                totalApostas + (totalApostas > 1 ? ' apostas' : ' aposta') + '</p>';
+        }
+
+        function situacaoParticipante(pessoa, resultadoVisivel) {
+            if (!pessoa.online) {
+                return '<span class="selo selo-saiu">saiu</span>';
+            }
+
+            if (!pessoa.apostou) {
+                return '<span class="selo selo-assistindo">assistindo</span>';
+            }
+
+            if (pessoa.pago && resultadoVisivel) {
+                return '<span class="' + classeLucro(pessoa.lucro) + '">' + comSinal(pessoa.lucro) + '</span>';
+            }
+
+            return '<span class="selo selo-assistindo">em jogo</span>';
+        }
+
+        function renderizarParticipantes(participantes, resultadoVisivel) {
+            const lista = (participantes && participantes.lista) || [];
+
+            elemento('contagemPessoas').textContent = participantes ? participantes.online : 0;
+            elemento('contagemApostando').textContent = participantes ? participantes.apostando : 0;
+
+            if (lista.length === 0) {
+                elemento('listaParticipantes').innerHTML = '<p class="fonte">Ninguém na mesa. Compartilhe o link de convite!</p>';
+                return;
+            }
+
+            elemento('listaParticipantes').innerHTML = lista.map(pessoa => {
+                const eu = String(pessoa.idJogador) === String(usuario.id);
+                const detalhe = pessoa.apostou
+                    ? formatarReal(pessoa.total) + ' em ' + pessoa.quantidade + (pessoa.quantidade > 1 ? ' apostas' : ' aposta')
+                    : 'sem aposta nesta rodada';
+
+                return '<div class="participante' + (eu ? ' eu' : '') + (pessoa.online ? '' : ' offline') + '">' +
+                    '<span class="avatar">' + escapar(inicial(pessoa.nome)) + '</span>' +
+                    '<div class="participante-info">' +
+                    '<strong>' + escapar(pessoa.nome) + (eu ? ' <span class="tag-voce">você</span>' : '') + '</strong>' +
+                    '<span class="fonte">' + detalhe + '</span>' +
+                    '</div>' +
+                    '<div class="participante-status">' + situacaoParticipante(pessoa, resultadoVisivel) + '<span class="ponto-online"></span></div>' +
+                    '</div>';
+            }).join('');
+        }
+
+        // ------------------------------------------------------------- sessão
+
+        function renderizarSessao(dados) {
+            const emSessao = Boolean(dados.sessao);
+            const ativa = emSessao && !dados.expirada;
+
+            elemento('faixaSessao').style.display = ativa ? 'flex' : 'none';
+            elemento('cardCriarSessao').style.display = emSessao || dados.expirada ? 'none' : 'block';
+            elemento('cardExpirada').style.display = dados.expirada ? 'block' : 'none';
+            elemento('cardParticipantes').style.display = dados.expirada ? 'none' : 'block';
+            elemento('cardApostasRodada').style.display = dados.expirada ? 'none' : 'block';
+            elemento('btnChatFlutuante').hidden = !ativa;
+
+            if (!ativa) {
+                fecharChat();
+                elemento('chatAviso').hidden = true;
+            }
+
+            if (!emSessao) {
+                elemento('tituloMesa').textContent = 'Mesa compartilhada';
+                elemento('tituloPagina').textContent = 'Roleta ao Vivo';
+                return;
+            }
+
+            prazoSessao = Date.now() + (dados.sessao.segundosRestantes || 0) * 1000;
+            elemento('nomeSessao').textContent = dados.sessao.nome;
+            elemento('codigoSessao').textContent = dados.sessao.codigo;
+            elemento('tituloMesa').textContent = 'Mesa privada';
+            elemento('tituloPagina').textContent = 'Roleta ao Vivo - ' + dados.sessao.nome;
+
+            if (elemento('linkConvite').value !== linkDeConvite()) {
+                elemento('linkConvite').value = linkDeConvite();
+            }
+        }
+
+        function renderizarTempoSessao() {
+            if (!prazoSessao) {
+                return;
+            }
+
+            const minutos = Math.max(0, Math.ceil((prazoSessao - Date.now()) / 60000));
+            elemento('tempoSessao').textContent = minutos <= 1 ? '1 minuto' : minutos + ' minutos';
+        }
+
+        async function criarSessao() {
+            if (criandoSessao) {
+                return;
+            }
+
+            criandoSessao = true;
+
+            try {
+                const dados = await api('/front/api/roleta-mesa/sessao', 'POST', { idUsuario: usuario.id });
+                window.location.href = '/front/roleta-mesa?codigo=' + encodeURIComponent(dados.sessao.codigo);
+            } catch (error) {
+                if (tratarSessaoInvalida(error)) return;
+                exibirMensagem(elemento('mensagem'), error.message, 'erro');
+                criandoSessao = false;
+            }
+        }
+
+        async function copiarLink() {
+            const campo = elemento('linkConvite');
+
+            try {
+                await navigator.clipboard.writeText(campo.value);
+                elemento('btnCopiarLink').textContent = 'Copiado!';
+            } catch (error) {
+                campo.select();
+                elemento('btnCopiarLink').textContent = 'Copie com Ctrl+C';
+            }
+
+            setTimeout(() => { elemento('btnCopiarLink').textContent = 'Copiar link'; }, 2500);
+        }
+
+        // ------------------------------------------------------------- chat
+
+        function atualizarBadge() {
+            const badge = elemento('chatBadge');
+
+            badge.textContent = naoLidas > 9 ? '9+' : naoLidas;
+            badge.hidden = naoLidas === 0;
+            elemento('btnChatFlutuante').classList.toggle('com-novidade', naoLidas > 0);
+        }
+
+        function mostrarAviso(mensagem) {
+            elemento('chatAvisoNome').textContent = mensagem.nome;
+            elemento('chatAvisoTexto').textContent = mensagem.texto;
+            elemento('chatAviso').hidden = false;
+
+            clearTimeout(timerAviso);
+            timerAviso = setTimeout(() => { elemento('chatAviso').hidden = true; }, DURACAO_AVISO);
+        }
+
+        function abrirChat() {
+            chatAberto = true;
+            elemento('chatPainel').hidden = false;
+            elemento('btnChatFlutuante').hidden = true;
+            elemento('chatAviso').hidden = true;
+            naoLidas = 0;
+            atualizarBadge();
+
+            const lista = elemento('chatMensagens');
+            lista.scrollTop = lista.scrollHeight;
+            elemento('chatTexto').focus();
+        }
+
+        function fecharChat() {
+            chatAberto = false;
+            elemento('chatPainel').hidden = true;
+            elemento('btnChatFlutuante').hidden = !codigoSessao || Boolean(estadoAtual && estadoAtual.expirada);
+        }
+
+        function adicionarMensagens(mensagens) {
+            if (!mensagens || mensagens.length === 0) {
+                primeiraCargaChat = false;
+                return;
+            }
+
+            const lista = elemento('chatMensagens');
+            const vazio = lista.querySelector('.chat-vazio');
+            const avisar = !primeiraCargaChat;
+
+            if (vazio) {
+                vazio.remove();
+            }
+
+            mensagens.forEach(mensagem => {
+                const minha = String(mensagem.idJogador) === String(usuario.id);
+                const linha = document.createElement('div');
+                linha.className = 'chat-mensagem' + (minha ? ' eu' : '');
+
+                const topo = document.createElement('div');
+                topo.className = 'chat-topo';
+
+                const nome = document.createElement('strong');
+                nome.textContent = mensagem.nome;
+
+                const hora = document.createElement('span');
+                hora.textContent = mensagem.hora;
+
+                topo.appendChild(nome);
+                topo.appendChild(hora);
+
+                const texto = document.createElement('p');
+                texto.textContent = mensagem.texto;
+
+                linha.appendChild(topo);
+                linha.appendChild(texto);
+                lista.appendChild(linha);
+
+                ultimoChat = Math.max(ultimoChat, mensagem.id);
+
+                if (avisar && !minha) {
+                    naoLidas++;
+                    mostrarAviso(mensagem);
+                }
+            });
+
+            primeiraCargaChat = false;
+            atualizarBadge();
+
+            if (chatAberto) {
+                lista.scrollTop = lista.scrollHeight;
+            }
+        }
+
+        async function enviarMensagem(evento) {
+            evento.preventDefault();
+
+            const campo = elemento('chatTexto');
+            const texto = campo.value.trim();
+
+            if (!texto || !codigoSessao) {
+                return;
+            }
+
+            try {
+                const dados = await api('/front/api/roleta-mesa/chat', 'POST', {
+                    idUsuario: usuario.id,
+                    codigo: codigoSessao,
+                    texto: texto
+                });
+
+                campo.value = '';
+                adicionarMensagens([dados.mensagem]);
+            } catch (error) {
+                if (tratarSessaoInvalida(error)) return;
+                exibirMensagem(elemento('mensagem'), error.message, 'erro');
+            }
+        }
+
+        // ------------------------------------------------------------- estado
+
+        function renderizarEstado(dados) {
+            estadoAtual = dados;
+            renderizarSessao(dados);
+
+            if (dados.expirada) {
+                atualizarFase(dados);
+                ajustarBloqueio("expirada");
+                animarRoda(dados);
+                exibirMensagem(elemento('mensagem'), '');
+                return;
+            }
+
+            prazoFase = Date.now() + (dados.segundosRestantes || 0) * 1000;
+
+            // O sorteio ja existe no banco desde o inicio do giro: nada de resultado antes da roda revelar
+            const resultadoVisivel = dados.fase === "resultado" && dados.sorteada;
+
+            elemento('idRodada').textContent = '#' + dados.idRodada;
+            elemento('meuTotal').textContent = formatarReal(dados.meuTotal);
+            elemento('totalMesa').textContent = formatarReal(dados.totalNaMesa);
+            elemento('meuSaldo').textContent = formatarReal(dados.saldo);
+            elemento('contador').textContent = dados.segundosRestantes;
+
+            atualizarFase(dados);
+            animarRoda(dados);
+            destacarNumeroSorteado(dados);
+            renderizarHistorico(dados.historico);
+            renderizarMinhasApostas(dados, resultadoVisivel);
+            renderizarApostasRodada(dados, resultadoVisivel);
+            renderizarParticipantes(dados.participantes, resultadoVisivel);
+            ajustarBloqueio(dados.fase);
+            adicionarMensagens(dados.chat);
+
+            if (dados.saldo !== undefined && dados.saldo !== null) {
+                elemento('saldoJogador').textContent = formatarReal(dados.saldo);
+                salvarUsuario({ id: usuario.id, usuario: usuario.usuario, saldo: dados.saldo });
+            }
+        }
+
+        function atualizarFase(dados) {
+            const fase = dados.expirada ? "expirada" : dados.fase;
+
+            elemento('faseTexto').textContent = nomeFase(fase);
+            elemento('badgeFase').textContent = nomeFase(fase);
+            elemento('badgeFase').className = 'badge-fase ' + fase;
+            elemento('contadorRotulo').textContent = ROTULOS_CONTADOR[dados.fase] || "sessão encerrada";
+        }
+
+        function atualizarBarra() {
+            if (!prazoFase || !estadoAtual || estadoAtual.expirada) {
+                return;
+            }
+
+            const restante = Math.max(0, Math.ceil((prazoFase - Date.now()) / 1000));
+            const duracao = estadoAtual.fase === "apostando" ? estadoAtual.duracao.aposta
+                : (estadoAtual.fase === "girando" ? estadoAtual.duracao.giro : estadoAtual.duracao.resultado);
+
+            elemento('contador').textContent = restante;
+            elemento('barraFase').style.width = Math.max(0, Math.min(100, (restante / duracao) * 100)) + '%';
+            elemento('barraFase').className = 'fase-' + estadoAtual.fase;
+        }
+
+        async function atualizarTela() {
+            try {
+                const dados = await api('/front/api/roleta-mesa/estado', 'POST', {
+                    idUsuario: usuario.id,
+                    codigo: codigoSessao,
+                    desdeChat: ultimoChat
+                });
+
+                renderizarEstado(dados);
+            } catch (error) {
+                if (tratarSessaoInvalida(error)) return;
+                exibirMensagem(elemento('mensagem'), error.message, 'erro');
+            }
+
+            agendarAtualizacao();
+        }
+
+        function agendarAtualizacao() {
+            clearTimeout(timerPoll);
+            timerPoll = setTimeout(atualizarTela, document.hidden ? INTERVALO_POLL_OCULTO : INTERVALO_POLL);
+        }
+
+        function iniciarContador() {
+            timerContador = setInterval(() => {
+                renderizarTempoSessao();
+                atualizarBarra();
+            }, 250);
+        }
+
+        // ------------------------------------------------------------- apostas
+
+        async function apostar(aposta) {
+            if (apostando) {
+                return;
+            }
+
+            if (!estadoAtual || estadoAtual.fase !== "apostando") {
+                exibirMensagem(elemento('mensagem'), 'Aguarde a próxima rodada para apostar.', 'erro');
+                return;
+            }
+
+            apostando = true;
+
+            try {
+                const dados = await api('/front/api/roleta-mesa/apostar', 'POST', {
+                    idUsuario: usuario.id,
+                    bet: aposta,
+                    bet_amount: valoresFicha,
+                    idRodada: estadoAtual.idRodada,
+                    codigo: codigoSessao
+                });
+
+                renderizarEstado(dados);
+                exibirMensagem(elemento('mensagem'), dados.mensagem || 'Aposta confirmada!', 'sucesso');
+            } catch (error) {
+                if (tratarSessaoInvalida(error)) return;
+                exibirMensagem(elemento('mensagem'), error.message, 'erro');
+            } finally {
+                apostando = false;
+            }
+        }
+
+        document.addEventListener('click', function (evento) {
+            const ficha = evento.target.closest('[data-ficha]');
+
+            if (ficha) {
+                valoresFicha = Number(ficha.getAttribute('data-ficha'));
+                document.querySelectorAll('[data-ficha]').forEach(botao => botao.classList.toggle('ativa', botao === ficha));
+                return;
+            }
+
+            const numero = evento.target.closest('[data-numero]');
+
+            if (numero && !numero.disabled) {
+                apostar(numero.getAttribute('data-numero'));
+                return;
+            }
+
+            const cor = evento.target.closest('[data-cor]');
+
+            if (cor && !cor.disabled) {
+                apostar(cor.getAttribute('data-cor'));
+            }
+        });
+
+        elemento('btnChatFlutuante').addEventListener('click', abrirChat);
+        elemento('btnFecharChat').addEventListener('click', fecharChat);
+        elemento('chatAviso').addEventListener('click', abrirChat);
+        elemento('btnCriarSessao').addEventListener('click', criarSessao);
+        elemento('btnNovaSessao').addEventListener('click', criarSessao);
+        elemento('btnCopiarLink').addEventListener('click', copiarLink);
+        elemento('formChat').addEventListener('submit', enviarMensagem);
+
+        document.addEventListener('keydown', function (evento) {
+            if (evento.key === "Escape" && chatAberto) {
+                fecharChat();
+            }
+        });
+
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden) {
+                atualizarTela();
+            }
+        });
+
+        async function iniciar() {
+            if (!usuario) {
+                return;
+            }
+
+            elemento('nomeJogador').textContent = usuario.usuario;
+            elemento('saldoJogador').textContent = formatarReal(usuario.saldo);
+
+            try {
+                await carregarNumeros();
+            } catch (error) {
+                if (tratarSessaoInvalida(error)) return;
+                exibirMensagem(elemento('mensagem'), error.message, 'erro');
+            }
+
+            elemento('cardCriarSessao').style.display = codigoSessao ? 'none' : 'block';
+            iniciarContador();
+            atualizarTela();
+        }
+
+        iniciar();
+    </script>
+</body>
+
+</html>

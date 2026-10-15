@@ -70,6 +70,10 @@ class FrontController:
         def frontEstatisticas():
             return send_from_directory(TEMPLATES_DIR, "estatisticas.html")
 
+        @self.__app.route("/front/roleta-mesa")
+        def frontRoletaMesa():
+            return send_from_directory(TEMPLATES_DIR, "roletaMesa.html")
+
         @self.__app.route("/front/static/<path:filename>")
         def frontStatic(filename):
             return send_from_directory(STATIC_DIR, filename)
@@ -143,6 +147,55 @@ class FrontController:
             try:
                 estado = self.__service().jogarBlackjack(request.json or {})
                 return jsonify(estado), 200
+
+            except Exception as e:
+                return jsonify({"error": str(e)}), 400
+
+        @self.__app.route("/front/api/roleta-mesa/estado", methods=["POST"])
+        @self.__limite("600 per minute")
+        def frontApiMesaRoletaEstado():
+            try:
+                estado = self.__service().estadoMesaRoleta(request.json or {})
+                return jsonify(estado), 200
+
+            except Exception as e:
+                return jsonify({"error": str(e)}), 400
+
+        @self.__app.route("/front/api/roleta-mesa/numeros")
+        @self.__limite("60 per minute")
+        def frontApiMesaRoletaNumeros():
+            try:
+                return jsonify(self.__service().numerosMesaRoleta()), 200
+
+            except Exception as e:
+                return jsonify({"error": str(e)}), 400
+
+        @self.__app.route("/front/api/roleta-mesa/apostar", methods=["POST"])
+        @self.__limite("240 per minute")
+        def frontApiMesaRoletaApostar():
+            try:
+                estado = self.__service().apostarMesaRoleta(request.json or {})
+                return jsonify(estado), 200
+
+            except Exception as e:
+                return jsonify({"error": str(e)}), 400
+
+        @self.__app.route("/front/api/roleta-mesa/sessao", methods=["POST"])
+        @self.__limite("30 per minute")
+        def frontApiMesaRoletaSessao():
+            try:
+                dados = self.__service().criarSessaoRoleta(request.json or {})
+                return jsonify(dados), 201
+
+            except Exception as e:
+                return jsonify({"error": str(e)}), 400
+
+        @self.__app.route("/front/api/roleta-mesa/chat", methods=["POST"])
+        @self.__limite("120 per minute")
+        def frontApiMesaRoletaChat():
+            try:
+                dados = self.__service().enviarMensagemRoleta(request.json or {})
+                return jsonify(dados), 201
 
             except Exception as e:
                 return jsonify({"error": str(e)}), 400
