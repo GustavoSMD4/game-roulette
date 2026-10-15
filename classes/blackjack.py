@@ -304,8 +304,15 @@ class Blackjack:
         return cartas[0].getValor() == cartas[1].getValor()
 
     def __definirMotivo(self, mao: MaoBlackjack, valorJogador: int, valorDealer: int):
-        blackjackJogador = len(mao.getCartas()) == 2 and valorJogador == 21
-        blackjackDealer = len(self.__dealer.getCards()) == 2 and valorDealer == 21
+        return self.motivoDoResultado(
+            valorJogador, valorDealer, len(mao.getCartas()), len(self.__dealer.getCards())
+        )
+
+    @classmethod
+    def motivoDoResultado(cls, valorJogador: int, valorDealer: int, cartasJogador: int, cartasDealer: int) -> str:
+        """Regra unica de quem ganhou: usada pelo jogo solo e pela mesa ao vivo."""
+        blackjackJogador = cartasJogador == 2 and valorJogador == 21
+        blackjackDealer = cartasDealer == 2 and valorDealer == 21
 
         if blackjackJogador and blackjackDealer:
             return "ambos_blackjack"
@@ -326,6 +333,14 @@ class Blackjack:
             return "empate"
 
         return "menor_valor" if valorJogador < valorDealer else "maior_valor"
+
+    @classmethod
+    def pagamentoDoMotivo(cls, motivo: str) -> float:
+        return cls.PAGAMENTOS.get(motivo, 0.0)
+
+    @classmethod
+    def resumoDoMotivo(cls, motivo: str) -> dict:
+        return cls.RESUMOS_RESULTADO.get(motivo, {"situacao": "neutro", "titulo": "Resultado", "descricao": ""})
 
     def __avaliarJogador(self, mao: MaoBlackjack):
         valorJogador = mao.getValorMao()

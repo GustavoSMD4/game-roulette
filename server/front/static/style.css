@@ -40,6 +40,9 @@ body {
     margin: 0;
     padding: 16px 14px 44px;
     min-height: 100vh;
+    /* rede de segurança: nenhum elemento largo deve empurrar a página para o lado no celular */
+    max-width: 100%;
+    overflow-x: hidden;
     color: var(--texto);
     font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     font-size: 16px;
@@ -1476,30 +1479,99 @@ button.botao-cor.black {
 
 .mesa-grade {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 16px;
 }
 
 .coluna-jogo,
 .coluna-pessoas {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     align-content: start;
     gap: 16px;
+}
+
+/* impede que uma linha larga estique a coluna e o resto da pagina junto */
+.mesa-grade > *,
+.coluna-jogo > *,
+.coluna-pessoas > * {
+    min-width: 0;
 }
 
 .mesa-grade .card-stats {
     margin-bottom: 0;
 }
 
-.mesa-topo {
+.status-bar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px 10px;
+    margin-bottom: 14px;
+    padding: 12px 14px 10px;
+    background: linear-gradient(180deg, rgba(24, 33, 29, 0.98), rgba(15, 22, 19, 0.96));
+    border: 1px solid var(--borda);
+    border-radius: var(--raio-p);
+}
+
+.status-info {
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-width: 0;
+}
+
+.status-rodada {
+    color: var(--texto-suave);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.status-rodada strong {
+    color: var(--texto);
+}
+
+.status-fase {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.status-bar .barra-fase {
+    grid-column: 1 / -1;
+    margin: 2px 0 0;
+}
+
+.status-bar.fase-apostando {
+    background: linear-gradient(180deg, rgba(53, 196, 111, 0.22), rgba(15, 22, 19, 0.97) 70%);
+    border-color: rgba(53, 196, 111, 0.5);
+}
+
+.status-bar.fase-girando {
+    background: linear-gradient(180deg, rgba(227, 185, 63, 0.24), rgba(15, 22, 19, 0.97) 70%);
+    border-color: rgba(227, 185, 63, 0.5);
+}
+
+.status-bar.fase-resultado {
+    background: linear-gradient(180deg, rgba(74, 145, 255, 0.24), rgba(15, 22, 19, 0.97) 70%);
+    border-color: rgba(74, 145, 255, 0.5);
+}
+
+.status-bar.fase-expirada {
+    background: linear-gradient(180deg, rgba(226, 87, 76, 0.24), rgba(15, 22, 19, 0.97) 70%);
+    border-color: rgba(226, 87, 76, 0.5);
 }
 
 .badge-fase {
     display: inline-block;
-    margin-bottom: 6px;
     padding: 3px 10px;
     font-size: 11px;
     font-weight: 800;
@@ -1536,7 +1608,7 @@ button.botao-cor.black {
 .contador-bloco strong {
     display: block;
     color: var(--dourado-claro);
-    font-size: 32px;
+    font-size: 30px;
     line-height: 1;
     font-variant-numeric: tabular-nums;
 }
@@ -1555,8 +1627,227 @@ button.botao-cor.black {
 .palco-mesa {
     display: grid;
     justify-items: center;
-    gap: 9px;
-    padding: 16px 0 8px;
+    gap: 7px;
+    padding: 6px 0 4px;
+}
+
+.palco-mesa .numero-grande {
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), inset 0 0 30px rgba(0, 0, 0, 0.42), 0 0 0 9px rgba(12, 107, 60, 0.35);
+}
+
+/* telas estreitas: barra mais enxuta */
+@media (max-width: 480px) {
+    .status-bar {
+        gap: 6px 10px;
+        padding: 11px 14px 9px;
+    }
+
+    .status-info {
+        gap: 6px;
+    }
+
+    .badge-fase {
+        padding: 3px 8px;
+        font-size: 10px;
+        letter-spacing: 0.2px;
+    }
+
+    .status-rodada {
+        font-size: 11px;
+    }
+
+    .contador-bloco strong {
+        font-size: 26px;
+    }
+
+    .contador-bloco span {
+        font-size: 10px;
+    }
+}
+
+.titulo-secao-mini {
+    margin: 14px 0 6px;
+    color: var(--texto-suave);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.grade-numeros {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.grade-numeros button {
+    min-height: 40px;
+    padding: 6px 0;
+    font-size: 13px;
+}
+
+.campo-valor {
+    margin-top: 10px;
+}
+
+.campo-valor label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--texto-suave);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.campo-valor input {
+    width: 100%;
+}
+
+.campo-valor input.invalido {
+    border-color: var(--vermelho);
+    box-shadow: 0 0 0 3px rgba(226, 87, 76, 0.18);
+}
+
+.aviso-valor {
+    display: block;
+    min-height: 16px;
+    margin-top: 4px;
+    color: var(--vermelho);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.resumo-resultado {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--borda);
+}
+
+.resumo-resultado[hidden] {
+    display: none;
+}
+
+.lista-resultado {
+    display: grid;
+    gap: 6px;
+}
+
+.linha-resultado {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    padding: 9px 12px;
+    background: var(--campo);
+    border: 1px solid var(--borda);
+    border-left-width: 4px;
+    border-radius: var(--raio-p);
+}
+
+.linha-resultado.positivo {
+    border-left-color: var(--verde);
+}
+
+.linha-resultado.negativo {
+    border-left-color: var(--vermelho);
+}
+
+.linha-resultado.neutro {
+    border-left-color: var(--texto-suave);
+}
+
+.linha-resultado.eu {
+    background: rgba(227, 185, 63, 0.1);
+}
+
+.linha-resultado .nome {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 700;
+}
+
+.linha-resultado .apostado {
+    margin-left: auto;
+    color: var(--texto-suave);
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.linha-resultado strong {
+    min-width: 0;
+    margin-left: auto;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.fichas {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin: 10px 0 4px;
+}
+
+.ficha {
+    width: 100%;
+    padding: 10px 4px;
+    font-size: 13px;
+}
+
+.resumo-apostas {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin: 14px 0 8px;
+}
+
+.resumo-apostas .item-stats {
+    padding: 8px 9px;
+}
+
+.resumo-apostas .item-stats .rotulo {
+    margin-bottom: 2px;
+    font-size: 10px;
+    letter-spacing: 0;
+}
+
+.resumo-apostas .item-stats strong {
+    font-size: 13px;
+}
+
+.aposta-valor {
+    min-width: 0;
+}
+
+.historico-numeros {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    margin-top: 6px;
+    padding-bottom: 4px;
+    overflow-x: auto;
+}
+
+.numero-historico {
+    flex: 0 0 auto;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 6px;
+}
+
+/* espaco para o botao flutuante do chat nao cobrir o fim da pagina */
+.container.mesa-larga {
+    padding-bottom: 70px;
+}
+
+/* telas bem estreitas */
+@media (max-width: 380px) {
+    .palco-mesa .numero-grande {
+        width: 116px;
+        height: 116px;
+        font-size: 36px;
+    }
+
+    .resumo-apostas .item-stats strong {
+        font-size: 13px;
+    }
 }
 
 .titulo-com-contagem {
@@ -1958,11 +2249,17 @@ button.botao-cor.black {
 .aposta-item {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 8px;
     padding: 7px 10px;
     font-size: 13px;
     background: var(--campo);
     border-radius: var(--raio-p);
+}
+
+.aposta-item .valor-aposta {
+    flex: 0 0 auto;
+    min-width: 0;
 }
 
 .aposta-item strong {
@@ -2015,6 +2312,45 @@ button.botao-cor.black {
         align-items: start;
     }
 
+    .container.mesa-larga {
+        padding-bottom: 26px;
+    }
+
+    /* no PC a barra nao precisa grudar e o pano de numeros fica sempre visivel */
+    .status-bar .barra-fase {
+        margin: 10px 0 0;
+    }
+
+    .fichas {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .ficha {
+        width: auto;
+    }
+
+    .historico-numeros {
+        flex-wrap: wrap;
+    }
+
+    .resumo-apostas {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 8px;
+    }
+
+    .resumo-apostas .item-stats {
+        padding: 10px 12px;
+    }
+
+    .resumo-apostas .item-stats .rotulo {
+        font-size: 11px;
+    }
+
+    .resumo-apostas .item-stats strong {
+        font-size: 18px;
+    }
+
     .faixa-acoes input {
         flex: 1 1 auto;
     }
@@ -2057,6 +2393,105 @@ button.botao-cor.black {
 
 
 
+
+/* ------------------------------------------------------------ sala de blackjack */
+
+.lista-jogadores-sala {
+    display: grid;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.jogador-sala {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+    background: var(--superficie-2);
+    border: 1px solid var(--borda);
+    border-left-width: 4px;
+    border-left-color: var(--borda-forte);
+    border-radius: var(--raio-p);
+}
+
+.jogador-sala.eu {
+    border-left-color: var(--dourado);
+}
+
+.jogador-sala-topo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.valor-sala {
+    color: var(--dourado-claro);
+    font-size: 20px;
+    font-variant-numeric: tabular-nums;
+}
+
+.cartas-sala {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.cartas-sala img {
+    width: 38px;
+    height: auto;
+    border-radius: 4px;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45);
+}
+
+.lista-historico-sala {
+    display: grid;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.linha-historico-sala {
+    padding: 9px 12px;
+    background: var(--campo);
+    border: 1px solid var(--borda);
+    border-left-width: 4px;
+    border-radius: var(--raio-p);
+}
+
+.linha-historico-sala.positivo {
+    border-left-color: var(--verde);
+}
+
+.linha-historico-sala.negativo {
+    border-left-color: var(--vermelho);
+}
+
+.linha-historico-sala.neutro {
+    border-left-color: var(--texto-suave);
+}
+
+.historico-topo,
+.historico-base {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.historico-topo strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.historico-base .fonte {
+    margin: 0;
+    font-size: 12px;
+}
+
+.historico-base strong {
+    font-variant-numeric: tabular-nums;
+}
 
 /* ------------------------------------------------------------ replay */
 
@@ -2415,5 +2850,313 @@ button.botao-cor.black {
 @media (min-width: 1500px) {
     body.com-sidebar {
         padding-right: 48px;
+    }
+}
+
+/* ------------------------------------------------------------ blackjack ao vivo */
+
+.mensagem-mesa {
+    margin: 0 0 14px;
+    color: var(--dourado-claro);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.mensagem-mesa:empty {
+    display: none;
+}
+
+.status-bar.fase-jogando {
+    background: linear-gradient(180deg, rgba(227, 185, 63, 0.22), rgba(15, 22, 19, 0.97) 70%);
+    border-color: rgba(227, 185, 63, 0.5);
+}
+
+.status-bar.fase-dealer {
+    background: linear-gradient(180deg, rgba(226, 87, 76, 0.2), rgba(15, 22, 19, 0.97) 70%);
+    border-color: rgba(226, 87, 76, 0.45);
+}
+
+.badge-fase.jogando {
+    color: #2a1a05;
+    background: var(--dourado);
+}
+
+.badge-fase.dealer {
+    color: #fff;
+    background: var(--vermelho);
+}
+
+.barra-fase span.fase-jogando {
+    background: linear-gradient(90deg, var(--dourado-claro), var(--dourado));
+}
+
+.barra-fase span.fase-dealer {
+    background: linear-gradient(90deg, var(--vermelho), var(--dourado));
+}
+
+.decisoes {
+    border-top: 3px solid var(--dourado);
+    box-shadow: 0 0 0 1px rgba(227, 185, 63, 0.35), 0 14px 34px rgba(0, 0, 0, 0.4);
+}
+
+/* mesa ao vivo: o mesmo pano da mesa individual, com todos os jogadores e suas cartas */
+
+.mesa-ao-vivo {
+    padding: 14px;
+    border-radius: 16px;
+}
+
+.mao-dealer {
+    padding-bottom: 12px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.mesa-ao-vivo .cartas {
+    gap: 7px;
+    min-height: 0;
+}
+
+.mesa-ao-vivo .cartas img {
+    width: clamp(46px, 13.5vw, 62px);
+}
+
+.carta-virada {
+    width: clamp(46px, 13.5vw, 62px);
+    min-height: 0;
+    aspect-ratio: 68 / 96;
+    background-color: #123c6b;
+    background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.14) 0 6px, transparent 6px 12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 7px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+    animation: entrarCarta 320ms ease-out backwards;
+}
+
+.assentos {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+}
+
+.assento-mesa {
+    min-width: 0;
+    padding: 8px 10px 10px;
+    border-left: 3px solid transparent;
+    border-radius: 10px;
+}
+
+.assento-mesa.eu {
+    border-left-color: rgba(227, 185, 63, 0.5);
+}
+
+.assento-mesa.atual {
+    background: rgba(255, 255, 255, 0.07);
+    border-left-color: var(--dourado);
+    box-shadow: 0 0 0 1px rgba(227, 185, 63, 0.45), 0 0 20px rgba(227, 185, 63, 0.14);
+}
+
+.assento-cabecalho {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-width: 0;
+    margin-bottom: 8px;
+}
+
+.assento-nome {
+    min-width: 0;
+    overflow: hidden;
+    color: #eafff1;
+    font-size: 14px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.assento-aposta {
+    padding: 2px 9px;
+    margin-left: auto;
+    color: #d7ffe6;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 999px;
+}
+
+.maos-assento {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+}
+
+.mao-linha {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    min-width: 0;
+}
+
+.mao-linha.encerrada {
+    opacity: 0.72;
+}
+
+.mao-base {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-width: 0;
+}
+
+/* o painel de jogada fica na propria mao: aparece junto das cartas, nao no topo da tela */
+
+.assento-decisao {
+    padding: 12px 14px;
+    margin-top: 12px;
+    background: rgba(3, 16, 11, 0.62);
+    border: 1px solid rgba(227, 185, 63, 0.45);
+    border-top-width: 3px;
+    border-radius: var(--raio-p);
+}
+
+.assento-decisao h2 {
+    margin: 0;
+    font-size: 17px;
+}
+
+/* dois por linha: os botoes nao empurram a mesa para fora da tela no celular */
+
+.assento-decisao .acoes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.aviso-mesa-vazia {
+    margin: 0;
+    padding: 4px 0;
+    color: #d7ffe6;
+}
+
+.valor-mao {
+    color: var(--dourado-claro);
+    font-size: 18px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+.selo-vez {
+    padding: 2px 9px;
+    color: #21190a;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    background: var(--dourado);
+    border-radius: 999px;
+    animation: pulsarVez 1.4s ease-in-out infinite;
+}
+
+.selo-resultado {
+    padding: 2px 9px;
+    font-size: 11px;
+    font-weight: 800;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.selo-resultado.positivo {
+    color: #0b2417;
+    background: var(--verde);
+}
+
+.selo-resultado.negativo {
+    color: #fff;
+    background: var(--vermelho);
+}
+
+.selo-resultado.neutro {
+    color: var(--texto);
+    background: rgba(255, 255, 255, 0.14);
+}
+
+.resultado-geral {
+    margin-top: 16px;
+    padding: 12px 14px;
+    background: var(--superficie-2);
+    border: 1px solid var(--borda);
+    border-radius: var(--raio-p);
+}
+
+.resumo-geral {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.resumo-geral .item-stats {
+    margin: 0;
+}
+
+.minha-aposta {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.minha-aposta .item-stats {
+    margin: 0;
+}
+
+.aviso-valor {
+    color: var(--vermelho);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.aviso-valor:empty {
+    display: none;
+}
+
+input.invalido {
+    border-color: var(--vermelho);
+}
+
+@keyframes pulsarVez {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(227, 185, 63, 0.55);
+    }
+
+    50% {
+        box-shadow: 0 0 0 6px rgba(227, 185, 63, 0);
+    }
+}
+
+@media (max-width: 480px) {
+    .mesa-ao-vivo {
+        padding: 10px;
+    }
+
+    .assento-mesa {
+        padding: 6px 6px 8px;
+    }
+
+    .assento-cabecalho {
+        margin-bottom: 6px;
+    }
+
+    .assento-decisao {
+        padding: 10px 11px;
+    }
+
+    .valor-mao {
+        font-size: 16px;
     }
 }

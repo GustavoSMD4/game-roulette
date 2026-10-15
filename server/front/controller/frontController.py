@@ -74,6 +74,10 @@ class FrontController:
         def frontRoletaMesa():
             return send_from_directory(TEMPLATES_DIR, "roletaMesa.html")
 
+        @self.__app.route("/front/blackjack-sala")
+        def frontBlackjackSala():
+            return send_from_directory(TEMPLATES_DIR, "blackjackSala.html")
+
         @self.__app.route("/front/static/<path:filename>")
         def frontStatic(filename):
             return send_from_directory(STATIC_DIR, filename)
@@ -195,6 +199,56 @@ class FrontController:
         def frontApiMesaRoletaChat():
             try:
                 dados = self.__service().enviarMensagemRoleta(request.json or {})
+                return jsonify(dados), 201
+
+            except Exception as e:
+                return jsonify({"error": str(e)}), 400
+
+        @self.__app.route("/front/api/blackjack/sala", methods=["POST"])
+        @self.__limite("30 per minute")
+        def frontApiBlackjackSala():
+            try:
+                dados = self.__service().criarSalaBlackjack(request.json or {})
+                return jsonify(dados), 201
+
+            except Exception as e:
+                return jsonify({"error": str(e)}), 400
+
+        @self.__app.route("/front/api/blackjack/sala/estado", methods=["POST"])
+        @self.__limite("600 per minute")
+        def frontApiBlackjackSalaEstado():
+            try:
+                estado = self.__service().estadoSalaBlackjack(request.json or {})
+                return jsonify(estado), 200
+
+            except Exception as e:
+                return jsonify({"error": str(e)}), 400
+
+        @self.__app.route("/front/api/blackjack/sala/apostar", methods=["POST"])
+        @self.__limite("240 per minute")
+        def frontApiBlackjackSalaApostar():
+            try:
+                estado = self.__service().apostarSalaBlackjack(request.json or {})
+                return jsonify(estado), 200
+
+            except Exception as e:
+                return jsonify({"error": str(e)}), 400
+
+        @self.__app.route("/front/api/blackjack/sala/jogar", methods=["POST"])
+        @self.__limite("240 per minute")
+        def frontApiBlackjackSalaJogar():
+            try:
+                estado = self.__service().jogarSalaBlackjack(request.json or {})
+                return jsonify(estado), 200
+
+            except Exception as e:
+                return jsonify({"error": str(e)}), 400
+
+        @self.__app.route("/front/api/blackjack/sala/chat", methods=["POST"])
+        @self.__limite("120 per minute")
+        def frontApiBlackjackSalaChat():
+            try:
+                dados = self.__service().enviarMensagemSalaBlackjack(request.json or {})
                 return jsonify(dados), 201
 
             except Exception as e:

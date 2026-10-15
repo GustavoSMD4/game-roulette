@@ -79,6 +79,29 @@ class ResultadoBlackjackRepo:
         )
         return [ResultadoBlackjack.newModel(reg) for reg in self.__formatar(cursor)]
 
+    def consultarUltimos(self, limite: int = 12):
+        cursor = self.__cursor()
+        cursor.execute("SELECT * FROM RESULTADOS_BLACKJACK ORDER BY ID DESC LIMIT ?;", (limite,))
+        return [ResultadoBlackjack.newModel(reg) for reg in self.__formatar(cursor)]
+
+    def consultarUltimosPorJogadores(self, idsJogadores: list, limite: int = 12):
+        """Ultimas maos de um grupo de jogadores (usado no historico da sala privada)."""
+        if not idsJogadores:
+            return []
+
+        marcadores = ",".join("?" for _ in idsJogadores)
+        cursor = self.__cursor()
+        cursor.execute(
+            f"""
+            SELECT * FROM RESULTADOS_BLACKJACK
+            WHERE ID_JOGADOR IN ({marcadores})
+            ORDER BY ID DESC
+            LIMIT ?;
+            """,
+            tuple(str(idJogador) for idJogador in idsJogadores) + (limite,)
+        )
+        return [ResultadoBlackjack.newModel(reg) for reg in self.__formatar(cursor)]
+
     def create(self, resultado: ResultadoBlackjack):
         cursor = self.__cursor()
         cursor.execute(

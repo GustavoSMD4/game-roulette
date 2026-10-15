@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blackjack ao vivo - Game Roulette</title>
+    <link rel="stylesheet" href="/front/static/style.css">
+</head>
+
+<body class="com-sidebar">
+    <button class="btn-menu" id="btnMenu" aria-label="Abrir menu">&#9776;</button>
+    <div class="backdrop" id="backdrop"></div>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-marca"><span class="marca-texto">Game Roulette</span></div>
+
+        <nav class="sidebar-nav">
+            <a class="item-nav" href="/front/roleta"><span class="rotulo-nav">Roleta</span></a>
+            <a class="item-nav" href="/front/roleta-mesa"><span class="rotulo-nav">Roleta ao Vivo</span></a>
+            <a class="item-nav" href="/front/blackjack"><span class="rotulo-nav">Blackjack</span></a>
+            <a class="item-nav" href="/front/blackjack-sala"><span class="rotulo-nav">Blackjack com amigos</span></a>
+            <a class="item-nav" href="/front/estatisticas"><span class="rotulo-nav">Estatísticas</span></a>
+            <a class="item-nav" href="/front/conta"><span class="rotulo-nav">Minha conta</span></a>
+        </nav>
+
+        <div class="sidebar-rodape">
+            <div class="usuario">
+                <span id="nomeJogador">-</span>
+                <strong class="saldo" id="saldoJogador">-</strong>
+            </div>
+
+            <button class="secundario largo" onclick="sair()"><span class="rotulo-botao">Sair</span></button>
+        </div>
+    </aside>
+
+    <button class="btn-recolher" id="btnRecolher" aria-label="Recolher menu"></button>
+
+    <h1 class="titulo-pagina" id="tituloPagina">Blackjack ao vivo</h1>
+
+    <div class="container largo mesa-larga">
+        <section class="faixa-sessao" id="faixaSala" style="display: none;">
+            <div class="faixa-info">
+                <span class="tag-sessao">Sala privada</span>
+                <strong id="nomeSala">-</strong>
+                <span class="codigo-sessao">Código <b id="codigoSala">-</b></span>
+                <span class="fonte">Expira em <strong id="tempoSala">-</strong></span>
+            </div>
+
+            <div class="faixa-acoes">
+                <input type="text" id="linkConvite" readonly aria-label="Link de convite">
+                <button class="secundario" id="btnCopiarLink">Copiar link</button>
+                <a class="botao-ghost" href="/front/blackjack-sala">Sair</a>
+            </div>
+        </section>
+
+        <section class="card-stats sessao-criar" id="cardCriarSala" style="display: none;">
+            <h2>Jogar com os amigos</h2>
+            <p class="fonte">Crie uma sala privada, mande o link e joguem a mesma mesa ao vivo:
+                <strong>10 segundos</strong> de apostas, cada um decide na sua vez com <strong>15 segundos</strong>,
+                depois o dealer joga e sai o resultado geral. A sala dura 1 hora.</p>
+            <button id="btnCriarSala">Criar sala privada (1 hora)</button>
+        </section>
+
+        <section class="card-stats sessao-expirada" id="cardExpirada" style="display: none;">
+            <h2>A sala expirou</h2>
+            <p class="fonte" id="textoExpirada">Esta sala privada chegou ao fim de 1 hora.</p>
+            <button id="btnNovaSala">Criar nova sala</button>
+        </section>
+
+        <div class="mesa-grade">
+            <div class="coluna-jogo">
+                <section class="card-stats destaque-mesa">
+                    <div class="status-bar fase-apostando" id="statusBar">
+                        <div class="status-info">
+                            <span class="badge-fase apostando" id="badgeFase">apostas abertas</span>
+                            <span class="status-rodada">Rodada <strong id="numeroRodada">-</strong></span>
+                        </div>
+
+                        <div class="contador-bloco">
+                            <strong id="contador">0</strong>
+                            <span id="contadorRotulo">para fechar as apostas</span>
+                        </div>
+
+                        <div class="barra-fase"><span id="barraFase"></span></div>
+                    </div>
+
+                    <p class="mensagem-mesa" id="mensagemMesa"></p>
+
+                    <div class="mesa mesa-ao-vivo">
+                        <div class="mao mao-dealer">
+                            <h3>Dealer - <span class="valor" id="valorDealer">0</span></h3>
+                            <div class="cartas" id="cartasDealer"></div>
+                        </div>
+
+                        <div class="assentos" id="assentos"></div>
+                    </div>
+
+                    <div class="resultado-geral" id="resultadoGeral" hidden>
+                        <p class="titulo-secao-mini" id="tituloGeral">Resultado da rodada</p>
+                        <div class="resumo-geral" id="resumoGeral"></div>
+                    </div>
+
+                    <div id="mensagem" class="mensagem"></div>
+                </section>
+
+                <section class="card-stats" id="cardAposta">
+                    <h2>Apostar</h2>
+                    <p class="fonte">Você pode aumentar a aposta enquanto a janela estiver aberta.</p>
+
+                    <div class="painel-aposta">
+                        <label for="valorAposta">Valor da aposta (R$)</label>
+                        <input type="number" id="valorAposta" min="1" step="1" value="10" inputmode="decimal">
+                        <span class="aviso-valor" id="avisoValor"></span>
+                    </div>
+
+                    <button class="largo" id="btnApostar">Apostar</button>
+                    <div class="minha-aposta" id="minhaAposta"></div>
+                </section>
+            </div>
+
+            <aside class="coluna-pessoas">
+                <section class="card-stats">
+                    <div class="titulo-com-contagem">
+                        <h2>Na sala</h2>
+                        <span class="contagem" id="contagemPessoas">0</span>
+                    </div>
+                    <p class="fonte">Todos que estão com a sala aberta agora</p>
+
+                    <div id="listaPessoas" class="lista-participantes"></div>
+                </section>
+            </aside>
+        </div>
+    </div>
+
+    <div class="chat-aviso" id="chatAviso" hidden>
+        <strong id="chatAvisoNome"></strong>
+        <span id="chatAvisoTexto"></span>
+    </div>
+
+    <button class="chat-flutuante" id="btnChatFlutuante" hidden>
+        <span class="chat-icone">&#128172;</span>
+        <span>Chat</span>
+        <span class="chat-badge" id="chatBadge" hidden>0</span>
+    </button>
+
+    <section class="chat-painel" id="chatPainel" hidden>
+        <div class="chat-cabecalho">
+            <div>
+                <strong>Chat da mesa</strong>
+                <span class="fonte" id="chatSubtitulo">Só nesta sala</span>
+            </div>
+            <button class="chat-fechar" id="btnFecharChat" aria-label="Fechar chat">&#10005;</button>
+        </div>
+
+        <div class="chat-mensagens" id="chatMensagens">
+            <p class="fonte chat-vazio">Nenhuma mensagem ainda. Diga oi!</p>
+        </div>
+
+        <form class="chat-form" id="formChat">
+            <input type="text" id="chatTexto" maxlength="200" placeholder="Escreva uma mensagem" autocomplete="off">
+            <button type="submit">Enviar</button>
+        </form>
+    </section>
+
+    <script src="/front/static/app.js"></script>
+    <script>
+        const usuario = exigirUsuario();
+
+        const INTERVALO_POLL = 1200;
+        const INTERVALO_POLL_OCULTO = 5000;
+        const DURACAO_AVISO = 4500;
+        const ATRASO_CARTA = 200;
+        const DURACAO_CARTA = 300;
+
+        const codigoSala = (new URLSearchParams(window.location.search).get('codigo') || '').trim().toUpperCase();
+
+        const ROTULOS = {
+            apostando: "para fechar as apostas",
+            jogando: "para decidir",
+            dealer: "jogando o dealer",
+            resultado: "para a próxima rodada"
+        };
+
+        const NOMES_FASE = {
+            apostando: "apostas abertas",
+            jogando: "jogando",
+            dealer: "vez do dealer",
+            resultado: "resultado da rodada",
+            expirada: "sala encerrada"
+        };
+
+        let estadoAtual = null;
+        let prazoFase = null;
+        let prazoSala = null;
+        let ultimoChat = 0;
+        let naoLidas = 0;
+        let chatAberto = false;
+        let primeiraCargaChat = true;
+        let timerPoll = null;
+        let timerAviso = null;
+        let apostando = false;
+        let criandoSala = false;
+        let eraMinhaVez = false;
+        const timersValor = new Map();
+
+        function elemento(id) {
+            return document.getElementById(id);
+        }
+
+        function linkDeConvite() {
+            return window.location.origin + "/front/blackjack-sala?codigo=" + encodeURIComponent(codigoSala);
+        }
+
+        function classeLucro(valor) {
+            return valor > 0 ? "positivo" : (valor < 0 ? "negativo" : "neutro");
+        }
+
+        function comSinal(valor) {
+            return (valor > 0 ? "+" : "") + formatarReal(valor);
+        }
+
+        // ------------------------------------------------------------- cartas
+
+        function criarImagemCarta(carta) {
+            const img = document.createElement('img');
+            img.src = '/assets/' + encodeURIComponent(carta.nomeImagem);
+            img.alt = carta.rank + ' de ' + carta.suit;
+            img.title = img.alt;
+            img.dataset.carta = String(carta.posicao);
+            return img;
+        }
+
+        function agendarValor(elementoValor, valor, atraso) {
+            const timers = timersValor.get(elementoValor) || [];
+            timers.push(setTimeout(() => { elementoValor.textContent = valor; }, atraso));
+            timersValor.set(elementoValor, timers);
+        }
+
+        function cancelarValor(elementoValor) {
+            (timersValor.get(elementoValor) || []).forEach(clearTimeout);
+            timersValor.set(elementoValor, []);
+        }
+
+        function animarValor(elementoValor, novas, parciais, valorFinal, atrasoMs) {
+            cancelarValor(elementoValor);
+
+            const valores = parciais || [];
+
+            if (!novas || novas.length === 0) {
+                elementoValor.textContent = valorFinal;
+                return;
+            }
+
+            novas.forEach(nova => {
+                const atraso = nova.ordem * atrasoMs + DURACAO_CARTA;
+                const valor = valores[nova.indice] !== undefined ? valores[nova.indice] : valorFinal;
+
+                agendarValor(elementoValor, valor, atraso);
+            });
+        }
+
+        function sincronizarCartas(elementoCartas, cartas, atrasoMs) {
+            const lista = cartas || [];
+            const base = elementoCartas.children.length;
+            const novas = [];
+
+            lista.forEach((carta, indice) => {
+                const atual = elementoCartas.children[indice];
+
+                if (atual && atual.dataset.carta === String(carta.posicao)) {
+                    return;
+                }
+
+                const img = criarImagemCarta(carta);
+                const ordem = Math.max(indice - base, 0);
+                img.style.animationDelay = (ordem * atrasoMs) + 'ms';
+
+                if (atual) {
+                    elementoCartas.replaceChild(img, atual);
+                } else {
+                    elementoCartas.appendChild(img);
+                }
+
+                novas.push({ indice: indice, ordem: ordem });
+            });
+
+            while (elementoCartas.children.length > lista.length) {
+                elementoCartas.removeChild(elementoCartas.lastChild);
+            }
+
+            return novas;
+        }
+
+        // ------------------------------------------------------------- mesa
+
+        function renderizarDealer(dealer) {
+            const cartas = dealer.cartas || [];
+            const visiveis = dealer.revelado ? cartas : cartas.slice(0, 1);
+            const container = elemento('cartasDealer');
+            const novas = sincronizarCartas(container, visiveis, ATRASO_CARTA);
+
+            if (!dealer.revelado && cartas.length > 1 && !container.querySelector('.carta-virada')) {
+                const virada = document.createElement('div');
+                virada.className = 'carta-virada';
+                virada.title = 'Carta fechada';
+                container.appendChild(virada);
+            }
+
+            if (dealer.revelado) {
+                const virada = container.querySelector('.carta-virada');
+
+                if (virada) {
+                    virada.remove();
+                }
+            }
+
+            animarValor(elemento('valorDealer'), novas, dealer.valoresParciais, dealer.valorFinal, ATRASO_CARTA);
+        }
+
+        function seloResultado(mao) {
+            if (mao.lucro === null || mao.lucro === undefined) {
+                return '';
+            }
+
+            const classe = classeLucro(mao.lucro);
+            const verbo = mao.lucro > 0 ? 'ganhou' : (mao.lucro < 0 ? 'perdeu' : 'empate');
+
+            return '<span class="selo-resultado ' + classe + '">' + verbo +
+                (mao.lucro === 0 ? '' : ' ' + comSinal(mao.lucro)) + '</span>';
+        }
+
+        const assentosDom = new Map();
+
+        function blocoDecisao() {
+            const bloco = document.createElement('div');
+            bloco.className = 'decisoes assento-decisao';
+            bloco.id = 'cardDecisao';
+            bloco.style.display = 'none';
+            bloco.innerHTML =
+                '<div class="titulo-com-contagem">' +
+                '<h2 id="tituloDecisao">Sua vez</h2>' +
+                '<span class="contagem" id="tempoDecisao">0</span>' +
+                '</div>' +
+                '<p class="fonte" id="subtituloDecisao">Escolha uma jogada antes do tempo acabar</p>' +
+                '<div class="acoes" id="acoes"></div>' +
+                '<p class="aviso-acao" id="avisoAcoes"></p>';
+            return bloco;
+        }
+
+        function criarAssento(jogador) {
+            const raiz = document.createElement('div');
+            raiz.className = 'assento-mesa';
+
+            const cabecalho = document.createElement('div');
+            cabecalho.className = 'assento-cabecalho';
+            cabecalho.innerHTML =
+                '<span class="avatar"></span>' +
+                '<strong class="assento-nome"></strong>' +
+                '<span class="selo-vez" hidden>sua vez</span>' +
+                '<span class="assento-aposta"></span>';
+            raiz.appendChild(cabecalho);
+
+            const maos = document.createElement('div');
+            maos.className = 'maos-assento';
+            raiz.appendChild(maos);
+
+            // o painel de jogada fica preso na propria mao: nada de procurar botao longe da mesa
+            if (jogador.eu) {
+                raiz.appendChild(blocoDecisao());
+            }
+
+            return raiz;
+        }
+
+        function criarLinhaMao() {
+            const linha = document.createElement('div');
+            linha.className = 'mao-linha';
+            linha.innerHTML =
+                '<div class="cartas"></div>' +
+                '<div class="mao-base">' +
+                '<strong class="valor-mao">0</strong>' +
+                '<span class="fonte aposta-mao"></span>' +
+                '<span class="motivo-mao"></span>' +
+                '</div>';
+            return linha;
+        }
+
+        function atualizarAssento(raiz, jogador, mostrarResultado) {
+            raiz.classList.toggle('eu', Boolean(jogador.eu));
+            raiz.classList.toggle('atual', Boolean(jogador.minhaVez));
+            raiz.querySelector('.avatar').textContent = (jogador.nome || "?").slice(0, 1).toUpperCase();
+            raiz.querySelector('.assento-nome').innerHTML = escapar(jogador.nome) +
+                (jogador.eu ? ' <span class="tag-voce">você</span>' : '');
+            raiz.querySelector('.selo-vez').hidden = !jogador.minhaVez;
+            raiz.querySelector('.assento-aposta').textContent = jogador.maos.length
+                ? 'aposta ' + formatarReal(jogador.apostaTotal)
+                : 'fora desta rodada';
+
+            const containerMaos = raiz.querySelector('.maos-assento');
+
+            jogador.maos.forEach((mao, indice) => {
+                if (indice >= containerMaos.children.length) {
+                    containerMaos.appendChild(criarLinhaMao());
+                }
+
+                const linha = containerMaos.children[indice];
+                linha.classList.toggle('encerrada', Boolean(mao.encerrada));
+                sincronizarCartas(linha.querySelector('.cartas'), mao.cartas || [], ATRASO_CARTA);
+                linha.querySelector('.valor-mao').textContent = mao.valor;
+                linha.querySelector('.aposta-mao').textContent = formatarReal(mao.aposta);
+                linha.querySelector('.motivo-mao').innerHTML = mostrarResultado ? seloResultado(mao) : '';
+            });
+
+            while (containerMaos.children.length > jogador.maos.length) {
+                containerMaos.removeChild(containerMaos.lastChild);
+            }
+        }
+
+        function renderizarAssentos(dados) {
+            const container = elemento('assentos');
+            const mostrarResultado = dados.fase === "resultado";
+
+            // eu fico sempre na borda de baixo da mesa, com os botoes logo abaixo das minhas cartas
+            const jogadores = (dados.jogadores || []).slice()
+                .sort((a, b) => (Boolean(a.eu) === Boolean(b.eu) ? 0 : (a.eu ? 1 : -1)));
+
+            if (jogadores.length === 0) {
+                assentosDom.forEach((raiz, chave) => {
+                    raiz.remove();
+                    assentosDom.delete(chave);
+                });
+
+                const vazio = container.querySelector('.aviso-mesa-vazia');
+
+                if (!vazio) {
+                    const aviso = document.createElement('p');
+                    aviso.className = 'fonte aviso-mesa-vazia';
+                    aviso.textContent = 'Ninguém apostou nesta rodada ainda. As apostas ficam abertas por ' +
+                        (dados.duracao ? dados.duracao.aposta : 10) + ' segundos.';
+                    container.insertBefore(aviso, container.firstChild);
+                }
+
+                return;
+            }
+
+            const vazio = container.querySelector('.aviso-mesa-vazia');
+
+            if (vazio) {
+                vazio.remove();
+            }
+
+            jogadores.forEach((jogador, indice) => {
+                const chave = String(jogador.idJogador);
+                let raiz = assentosDom.get(chave);
+
+                if (!raiz) {
+                    raiz = criarAssento(jogador);
+                    assentosDom.set(chave, raiz);
+                }
+
+                atualizarAssento(raiz, jogador, mostrarResultado);
+
+                if (container.children[indice] !== raiz) {
+                    container.insertBefore(raiz, container.children[indice] || null);
+                }
+            });
+
+            assentosDom.forEach((raiz, chave) => {
+                if (!jogadores.some(jogador => String(jogador.idJogador) === chave)) {
+                    raiz.remove();
+                    assentosDom.delete(chave);
+                }
+            });
+        }
+
+        function renderizarResultadoGeral(dados) {
+            const painel = elemento('resultadoGeral');
+            const resumo = dados.resultados;
+
+            if (dados.fase !== "resultado" || !resumo) {
+                painel.hidden = true;
+                return;
+            }
+
+            elemento('tituloGeral').textContent =
+                resumo.ganharam + (resumo.ganharam === 1 ? ' ganhou' : ' ganharam') + ', ' +
+                resumo.perderam + (resumo.perderam === 1 ? ' perdeu' : ' perderam') +
+                (resumo.empataram ? ', ' + resumo.empataram + ' empataram' : '') +
+                ' - dealer fez ' + resumo.valorDealer;
+
+            const saldoJogadores = resumo.totalPago - resumo.totalApostado;
+
+            elemento('resumoGeral').innerHTML =
+                '<div class="item-stats"><span class="rotulo">Apostado na mesa</span><strong>' +
+                formatarReal(resumo.totalApostado) + '</strong></div>' +
+                '<div class="item-stats"><span class="rotulo">Pago pelo dealer</span><strong>' +
+                formatarReal(resumo.totalPago) + '</strong></div>' +
+                '<div class="item-stats"><span class="rotulo">Lucro dos jogadores</span><strong class="' +
+                classeLucro(saldoJogadores) + '">' + comSinal(saldoJogadores) + '</strong></div>';
+
+            painel.hidden = false;
+        }
+
+        function renderizarMinhaAposta(dados) {
+            const meu = dados.meu;
+
+            if (!meu || !meu.maos.length) {
+                elemento('minhaAposta').innerHTML = '<p class="fonte">Você ainda não apostou nesta rodada.</p>';
+                return;
+            }
+
+            elemento('minhaAposta').innerHTML =
+                '<p class="titulo-secao-mini">Sua aposta nesta rodada</p>' +
+                '<div class="item-stats"><span class="rotulo">Total apostado</span><strong>' +
+                formatarReal(meu.apostaTotal) + '</strong></div>' +
+                '<div class="item-stats"><span class="rotulo">Saldo disponível</span><strong>' +
+                formatarReal(dados.meuSaldo) + '</strong></div>';
+        }
+
+        function renderizarAcoes(dados) {
+            const card = elemento('cardDecisao');
+
+            if (!card) {
+                return;
+            }
+
+            const souDaRodada = Boolean(dados.meu && dados.meu.maos.length);
+            const minhaVez = dados.fase === "jogando" && Boolean(dados.meu && dados.meu.minhaVez);
+            const espera = dados.fase === "jogando" && souDaRodada && dados.turno && dados.turno.nome && !minhaVez;
+
+            if (minhaVez && !eraMinhaVez) {
+                // a mesa vive atualizando: so rola a tela quando a vez realmente chega
+                setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 120);
+            }
+
+            eraMinhaVez = minhaVez;
+
+            if (!minhaVez && !espera) {
+                card.style.display = 'none';
+                return;
+            }
+
+            card.style.display = 'block';
+
+            const container = elemento('acoes');
+            const avisos = [];
+
+            container.innerHTML = '';
+            elemento('avisoAcoes').textContent = '';
+
+            if (espera) {
+                elemento('tituloDecisao').textContent = 'Vez de ' + dados.turno.nome;
+                elemento('subtituloDecisao').textContent = 'Espere a jogada dele para jogar a sua mão';
+                container.innerHTML = '<p class="fonte">Aguardando a jogada de <strong>' +
+                    escapar(dados.turno.nome) + '</strong>...</p>';
+                return;
+            }
+
+            elemento('tituloDecisao').textContent = 'Sua vez';
+            elemento('subtituloDecisao').textContent = 'Escolha uma jogada antes do tempo acabar';
+
+            (dados.minhasAcoes || []).forEach(acao => {
+                const botao = document.createElement('button');
+                botao.textContent = acao.nome;
+
+                if (acao.descricao) {
+                    botao.title = acao.descricao;
+                }
+
+                if (!acao.habilitada) {
+                    botao.disabled = true;
+
+                    if (acao.motivoIndisponivel) {
+                        avisos.push(acao.nome + ': ' + acao.motivoIndisponivel);
+                    }
+                } else {
+                    botao.addEventListener('click', () => jogar(acao.comando));
+                }
+
+                container.appendChild(botao);
+            });
+
+            elemento('avisoAcoes').textContent = avisos.join(' ');
+        }
+
+        function situacaoPessoa(dados, pessoa) {
+            const jogador = (dados.jogadores || []).find(item => item.idJogador === pessoa.idJogador);
+
+            if (dados.fase === "resultado" && jogador && jogador.finalizado) {
+                return '<strong class="' + classeLucro(jogador.lucro || 0) + '">' + comSinal(jogador.lucro || 0) + '</strong>';
+            }
+
+            if (jogador && jogador.minhaVez) {
+                return '<span class="selo-vez">VEZ</span>';
+            }
+
+            if (jogador && jogador.maos.length) {
+                return '<span class="selo selo-assistindo">na mão</span>';
+            }
+
+            return '<span class="selo selo-assistindo">assistindo</span>';
+        }
+
+        function renderizarPresenca(dados) {
+            const lista = dados.presenca || [];
+
+            elemento('contagemPessoas').textContent = lista.length;
+
+            if (lista.length === 0) {
+                elemento('listaPessoas').innerHTML = '<p class="fonte">Ninguém na sala. Compartilhe o link!</p>';
+                return;
+            }
+
+            elemento('listaPessoas').innerHTML = lista.map(pessoa => {
+                const eu = String(pessoa.idJogador) === String(usuario.id);
+
+                return '<div class="participante' + (eu ? ' eu' : '') + '">' +
+                    '<span class="avatar">' + escapar((pessoa.nome || "?").slice(0, 1).toUpperCase()) + '</span>' +
+                    '<div class="participante-info">' +
+                    '<strong>' + escapar(pessoa.nome) + (eu ? ' <span class="tag-voce">você</span>' : '') + '</strong>' +
+                    '</div>' +
+                    '<div class="participante-status">' + situacaoPessoa(dados, pessoa) + '</div>' +
+                    '</div>';
+            }).join('');
+        }
+
+        function atualizarSaldo(dados) {
+            if (dados.meuSaldo === undefined || dados.meuSaldo === null) {
+                return;
+            }
+
+            elemento('saldoJogador').textContent = formatarReal(dados.meuSaldo);
+
+            if (usuario.saldo !== dados.meuSaldo) {
+                usuario.saldo = dados.meuSaldo;
+                salvarUsuario(usuario);
+            }
+        }
+
+        function ajustarFase(dados) {
+            const fase = dados.expirada ? "expirada" : dados.fase;
+
+            elemento('statusBar').className = 'status-bar fase-' + fase;
+            elemento('barraFase').className = 'fase-' + fase;
+            elemento('badgeFase').textContent = NOMES_FASE[fase] || fase;
+            elemento('badgeFase').className = 'badge-fase ' + fase;
+            elemento('contadorRotulo').textContent = ROTULOS[dados.fase] || "sala encerrada";
+            elemento('numeroRodada').textContent = dados.numeroRodada ? '#' + dados.numeroRodada : '-';
+            elemento('mensagemMesa').textContent = dados.mensagem || '';
+
+            const podeApostar = dados.fase === "apostando";
+
+            elemento('btnApostar').disabled = !podeApostar;
+            elemento('valorAposta').disabled = !podeApostar;
+            elemento('cardAposta').style.display = podeApostar ? 'block' : 'none';
+
+            const cardDecisao = elemento('cardDecisao');
+
+            if (cardDecisao) {
+                cardDecisao.style.display = dados.fase === "jogando" ? 'block' : 'none';
+            }
+        }
+
+        function validarAposta() {
+            if (!estadoAtual) {
+                return false;
+            }
+
+            const valor = Number(String(elemento('valorAposta').value).replace(",", "."));
+            const minima = estadoAtual.apostaMinima || 1;
+            const maxima = estadoAtual.apostaMaxima || 1000;
+            const disponivel = estadoAtual.meuSaldo;
+            let aviso = "";
+
+            if (isNaN(valor) || valor <= 0) {
+                aviso = "Digite um valor para apostar";
+            } else if (valor < minima) {
+                aviso = "Aposta mínima é " + formatarReal(minima);
+            } else if (valor > maxima) {
+                aviso = "Aposta máxima é " + formatarReal(maxima);
+            } else if (disponivel !== undefined && disponivel !== null && valor > disponivel) {
+                aviso = "Saldo insuficiente (disponível: " + formatarReal(disponivel) + ")";
+            }
+
+            elemento('avisoValor').textContent = aviso;
+            elemento('valorAposta').classList.toggle('invalido', aviso !== '');
+
+            return aviso === '';
+        }
+
+        function renderizar(dados) {
+            estadoAtual = dados;
+            renderizarSala(dados);
+            ajustarFase(dados);
+            atualizarSaldo(dados);
+
+            if (dados.expirada) {
+                elemento('assentos').innerHTML = '';
+                assentosDom.clear();
+                elemento('cartasDealer').innerHTML = '';
+                elemento('minhaAposta').innerHTML = '';
+                elemento('resultadoGeral').hidden = true;
+                return;
+            }
+
+            prazoFase = Date.now() + (dados.segundosRestantes || 0) * 1000;
+
+            elemento('contador').textContent = dados.segundosRestantes;
+
+            const tempoDecisao = elemento('tempoDecisao');
+
+            if (tempoDecisao) {
+                tempoDecisao.textContent = dados.segundosRestantes;
+            }
+
+            renderizarDealer(dados.dealer);
+            renderizarAssentos(dados);
+            renderizarResultadoGeral(dados);
+            renderizarMinhaAposta(dados);
+            renderizarAcoes(dados);
+            renderizarPresenca(dados);
+            validarAposta();
+            adicionarMensagens(dados.chat);
+        }
+
+        function atualizarBarra() {
+            if (!prazoFase || !estadoAtual || estadoAtual.expirada) {
+                return;
+            }
+
+            const restante = Math.max(0, Math.ceil((prazoFase - Date.now()) / 1000));
+            const duracoes = estadoAtual.duracao || {};
+            const fase = estadoAtual.fase;
+            const duracao = fase === "apostando" ? duracoes.aposta
+                : (fase === "jogando" ? duracoes.decisao : (fase === "dealer" ? duracoes.dealer : duracoes.resultado));
+
+            elemento('contador').textContent = restante;
+
+            const tempoDecisao = elemento('tempoDecisao');
+
+            if (tempoDecisao) {
+                tempoDecisao.textContent = restante;
+            }
+
+            elemento('barraFase').style.width = Math.max(0, Math.min(100, (restante / (duracao || 1)) * 100)) + '%';
+        }
+
+        // ------------------------------------------------------------- ações
+
+        async function apostar() {
+            if (apostando || !codigoSala) {
+                return;
+            }
+
+            if (!estadoAtual || estadoAtual.fase !== "apostando") {
+                exibirMensagem(elemento('mensagem'), 'As apostas já fecharam. Espere a próxima rodada.', 'erro');
+                return;
+            }
+
+            if (!validarAposta()) {
+                exibirMensagem(elemento('mensagem'), elemento('avisoValor').textContent, 'erro');
+                return;
+            }
+
+            apostando = true;
+
+            try {
+                const dados = await api('/front/api/blackjack/sala/apostar', 'POST', {
+                    idUsuario: usuario.id,
+                    codigo: codigoSala,
+                    valor: Number(String(elemento('valorAposta').value).replace(",", ".")),
+                    desdeChat: ultimoChat
+                });
+
+                renderizar(dados);
+                exibirMensagem(elemento('mensagem'), 'Aposta confirmada!', 'sucesso');
+            } catch (error) {
+                if (tratarSessaoInvalida(error)) return;
+                exibirMensagem(elemento('mensagem'), error.message, 'erro');
+            } finally {
+                apostando = false;
+            }
+        }
+
+        async function jogar(comando) {
+            try {
+                const dados = await api('/front/api/blackjack/sala/jogar', 'POST', {
+                    idUsuario: usuario.id,
+                    codigo: codigoSala,
+                    comando: comando,
+                    desdeChat: ultimoChat
+                });
+
+                renderizar(dados);
+                exibirMensagem(elemento('mensagem'), '');
+            } catch (error) {
+                if (tratarSessaoInvalida(error)) return;
+                exibirMensagem(elemento('mensagem'), error.message, 'erro');
+            }
+        }
+
+        // ------------------------------------------------------------- sala
+
+        function renderizarSala(dados) {
+            const emSala = Boolean(dados.sala);
+            const ativa = emSala && !dados.expirada;
+
+            elemento('faixaSala').style.display = ativa ? 'flex' : 'none';
+            elemento('cardCriarSala').style.display = emSala || dados.expirada ? 'none' : 'block';
+            elemento('cardExpirada').style.display = dados.expirada ? 'block' : 'none';
+            elemento('btnChatFlutuante').hidden = !ativa || chatAberto;
+            elemento('chatSubtitulo').textContent = 'Só nesta sala';
+
+            if (!ativa) {
+                fecharChat();
+                elemento('chatAviso').hidden = true;
+            }
+
+            if (!emSala) {
+                elemento('tituloPagina').textContent = 'Blackjack ao vivo';
+                return;
+            }
+
+            prazoSala = Date.now() + (dados.sala.segundosRestantes || 0) * 1000;
+            elemento('nomeSala').textContent = dados.sala.nome;
+            elemento('codigoSala').textContent = dados.sala.codigo;
+            elemento('tituloPagina').textContent = 'Blackjack - ' + dados.sala.nome;
+
+            if (elemento('linkConvite').value !== linkDeConvite()) {
+                elemento('linkConvite').value = linkDeConvite();
+            }
+        }
+
+        function renderizarTempoSala() {
+            if (!prazoSala) {
+                return;
+            }
+
+            const minutos = Math.max(0, Math.ceil((prazoSala - Date.now()) / 60000));
+            elemento('tempoSala').textContent = minutos <= 1 ? '1 minuto' : minutos + ' minutos';
+        }
+
+        async function criarSala() {
+            if (criandoSala) {
+                return;
+            }
+
+            criandoSala = true;
+
+            try {
+                const dados = await api('/front/api/blackjack/sala', 'POST', { idUsuario: usuario.id });
+                window.location.href = '/front/blackjack-sala?codigo=' + encodeURIComponent(dados.sala.codigo);
+            } catch (error) {
+                if (tratarSessaoInvalida(error)) return;
+                exibirMensagem(elemento('mensagem'), error.message, 'erro');
+                criandoSala = false;
+            }
+        }
+
+        async function copiarLink() {
+            const campo = elemento('linkConvite');
+
+            try {
+                await navigator.clipboard.writeText(campo.value);
+                elemento('btnCopiarLink').textContent = 'Copiado!';
+            } catch (error) {
+                campo.select();
+                elemento('btnCopiarLink').textContent = 'Copie com Ctrl+C';
+            }
+
+            setTimeout(() => { elemento('btnCopiarLink').textContent = 'Copiar link'; }, 2500);
+        }
+
+        // ------------------------------------------------------------- chat
+
+        function atualizarBadge() {
+            const badge = elemento('chatBadge');
+
+            badge.textContent = naoLidas > 9 ? '9+' : naoLidas;
+            badge.hidden = naoLidas === 0;
+            elemento('btnChatFlutuante').classList.toggle('com-novidade', naoLidas > 0);
+        }
+
+        function mostrarAviso(mensagem) {
+            elemento('chatAvisoNome').textContent = mensagem.nome;
+            elemento('chatAvisoTexto').textContent = mensagem.texto;
+            elemento('chatAviso').hidden = false;
+
+            clearTimeout(timerAviso);
+            timerAviso = setTimeout(() => { elemento('chatAviso').hidden = true; }, DURACAO_AVISO);
+        }
+
+        function abrirChat() {
+            chatAberto = true;
+            elemento('chatPainel').hidden = false;
+            elemento('btnChatFlutuante').hidden = true;
+            elemento('chatAviso').hidden = true;
+            naoLidas = 0;
+            atualizarBadge();
+
+            const lista = elemento('chatMensagens');
+            lista.scrollTop = lista.scrollHeight;
+            elemento('chatTexto').focus();
+        }
+
+        function fecharChat() {
+            chatAberto = false;
+            elemento('chatPainel').hidden = true;
+            elemento('btnChatFlutuante').hidden = !codigoSala || Boolean(estadoAtual && estadoAtual.expirada);
+        }
+
+        function adicionarMensagens(mensagens) {
+            if (!mensagens || mensagens.length === 0) {
+                primeiraCargaChat = false;
+                return;
+            }
+
+            const lista = elemento('chatMensagens');
+            const vazio = lista.querySelector('.chat-vazio');
+            const avisar = !primeiraCargaChat;
+
+            if (vazio) {
+                vazio.remove();
+            }
+
+            mensagens.forEach(mensagem => {
+                const minha = String(mensagem.idJogador) === String(usuario.id);
+                const linha = document.createElement('div');
+                linha.className = 'chat-mensagem' + (minha ? ' eu' : '');
+
+                const topo = document.createElement('div');
+                topo.className = 'chat-topo';
+
+                const nome = document.createElement('strong');
+                nome.textContent = mensagem.nome;
+
+                const hora = document.createElement('span');
+                hora.textContent = mensagem.hora;
+
+                topo.appendChild(nome);
+                topo.appendChild(hora);
+
+                const texto = document.createElement('p');
+                texto.textContent = mensagem.texto;
+
+                linha.appendChild(topo);
+                linha.appendChild(texto);
+                lista.appendChild(linha);
+
+                ultimoChat = Math.max(ultimoChat, mensagem.id);
+
+                if (avisar && !minha) {
+                    naoLidas++;
+                    mostrarAviso(mensagem);
+                }
+            });
+
+            primeiraCargaChat = false;
+            atualizarBadge();
+
+            if (chatAberto) {
+                lista.scrollTop = lista.scrollHeight;
+            }
+        }
+
+        async function enviarMensagem(evento) {
+            evento.preventDefault();
+
+            const campo = elemento('chatTexto');
+            const texto = campo.value.trim();
+
+            if (!texto || !codigoSala) {
+                return;
+            }
+
+            try {
+                const dados = await api('/front/api/blackjack/sala/chat', 'POST', {
+                    idUsuario: usuario.id,
+                    codigo: codigoSala,
+                    texto: texto
+                });
+
+                campo.value = '';
+                adicionarMensagens([dados.mensagem]);
+            } catch (error) {
+                if (tratarSessaoInvalida(error)) return;
+                exibirMensagem(elemento('mensagem'), error.message, 'erro');
+            }
+        }
+
+        // ------------------------------------------------------------- polling
+
+        async function atualizar() {
+            try {
+                const dados = await api('/front/api/blackjack/sala/estado', 'POST', {
+                    idUsuario: usuario.id,
+                    codigo: codigoSala,
+                    desdeChat: ultimoChat
+                });
+
+                renderizar(dados);
+            } catch (error) {
+                if (tratarSessaoInvalida(error)) return;
+                exibirMensagem(elemento('mensagem'), error.message, 'erro');
+            }
+
+            agendar();
+        }
+
+        function agendar(atraso) {
+            clearTimeout(timerPoll);
+            timerPoll = setTimeout(atualizar, atraso || (document.hidden ? INTERVALO_POLL_OCULTO : INTERVALO_POLL));
+        }
+
+        elemento('btnApostar').addEventListener('click', apostar);
+        elemento('valorAposta').addEventListener('input', validarAposta);
+        elemento('btnChatFlutuante').addEventListener('click', abrirChat);
+        elemento('btnFecharChat').addEventListener('click', fecharChat);
+        elemento('chatAviso').addEventListener('click', abrirChat);
+        elemento('btnCriarSala').addEventListener('click', criarSala);
+        elemento('btnNovaSala').addEventListener('click', criarSala);
+        elemento('btnCopiarLink').addEventListener('click', copiarLink);
+        elemento('formChat').addEventListener('submit', enviarMensagem);
+
+        document.addEventListener('keydown', function (evento) {
+            if (evento.key === "Escape" && chatAberto) {
+                fecharChat();
+            }
+        });
+
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden) {
+                atualizar();
+            }
+        });
+
+        function iniciar() {
+            if (!usuario) {
+                return;
+            }
+
+            elemento('nomeJogador').textContent = usuario.usuario;
+            elemento('saldoJogador').textContent = formatarReal(usuario.saldo);
+
+            if (codigoSala) {
+                atualizar();
+            } else {
+                elemento('cardCriarSala').style.display = 'block';
+            }
+
+            setInterval(() => {
+                renderizarTempoSala();
+                atualizarBarra();
+            }, 250);
+        }
+
+        iniciar();
+    </script>
+</body>
+
+</html>

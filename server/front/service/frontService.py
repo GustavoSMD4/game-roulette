@@ -1,6 +1,7 @@
 from classes.blackjack import Blackjack
 from server.blackjack.repository.blackjackRepo import BlackjackRepo
 from server.blackjack.service.blackjackService import BlackjackService
+from server.blackjack.service.mesaBlackjackService import MesaBlackjackService
 from server.games.roulette import Roulette
 from server.roulette.service.mesaRoletaService import MesaRoletaService
 from server.roulette.service.rouletteService import RouletteService
@@ -12,19 +13,20 @@ from server.usuario.service.usuarioService import UsuarioService
 class FrontService:
     def __init__(self, usuarioRepo: UsuarioRepo, usuarioService: UsuarioService, blackjackRepo: BlackjackRepo,
                  rouletteService: RouletteService, blackjackService: BlackjackService,
-                 mesaRoletaService: MesaRoletaService):
+                 mesaRoletaService: MesaRoletaService, mesaBlackjackService: MesaBlackjackService):
         self.__usuarioRepo = usuarioRepo
         self.__usuarioService = usuarioService
         self.__blackjackRepo = blackjackRepo
         self.__rouletteService = rouletteService
         self.__blackjackService = blackjackService
         self.__mesaRoletaService = mesaRoletaService
+        self.__mesaBlackjackService = mesaBlackjackService
 
     @classmethod
     def newService(cls):
         return cls(UsuarioRepo.newRepo(), UsuarioService.newService(), BlackjackRepo.newBlackjackRepo(),
                    RouletteService.newService(), BlackjackService.blackjackService(),
-                   MesaRoletaService.newService())
+                   MesaRoletaService.newService(), MesaBlackjackService.newService())
 
     def login(self, req: dict):
         usuario = req.get("usuario")
@@ -247,6 +249,42 @@ class FrontService:
         valores = Roulette.newRoulette().getValues()
 
         return {"numeros": [{"numero": numero, "cor": valores.get(numero)} for numero in range(0, 37)]}
+
+    def criarSalaBlackjack(self, req: dict):
+        return self.__mesaBlackjackService.criarSala({
+            "idUsuario": req.get("idUsuario"),
+            "nome": req.get("nome")
+        })
+
+    def estadoSalaBlackjack(self, req: dict):
+        return self.__mesaBlackjackService.estado({
+            "idUsuario": req.get("idUsuario"),
+            "codigo": req.get("codigo"),
+            "desdeChat": req.get("desdeChat")
+        })
+
+    def apostarSalaBlackjack(self, req: dict):
+        return self.__mesaBlackjackService.apostar({
+            "idUsuario": req.get("idUsuario"),
+            "codigo": req.get("codigo"),
+            "valor": req.get("valor"),
+            "desdeChat": req.get("desdeChat")
+        })
+
+    def jogarSalaBlackjack(self, req: dict):
+        return self.__mesaBlackjackService.jogar({
+            "idUsuario": req.get("idUsuario"),
+            "codigo": req.get("codigo"),
+            "comando": req.get("comando"),
+            "desdeChat": req.get("desdeChat")
+        })
+
+    def enviarMensagemSalaBlackjack(self, req: dict):
+        return self.__mesaBlackjackService.enviarMensagem({
+            "idUsuario": req.get("idUsuario"),
+            "codigo": req.get("codigo"),
+            "texto": req.get("texto")
+        })
 
     def apostarMesaRoleta(self, req: dict):
         return self.__mesaRoletaService.apostar({

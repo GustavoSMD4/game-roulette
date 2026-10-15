@@ -19,6 +19,7 @@
             <a class="item-nav" href="/front/roleta"><span class="rotulo-nav">Roleta</span></a>
             <a class="item-nav" href="/front/roleta-mesa"><span class="rotulo-nav">Roleta ao Vivo</span></a>
             <a class="item-nav" href="/front/blackjack"><span class="rotulo-nav">Blackjack</span></a>
+            <a class="item-nav" href="/front/blackjack-sala"><span class="rotulo-nav">Blackjack com amigos</span></a>
             <a class="item-nav" href="/front/estatisticas"><span class="rotulo-nav">Estatísticas</span></a>
             <a class="item-nav" href="/front/conta"><span class="rotulo-nav">Minha conta</span></a>
         </nav>
@@ -68,42 +69,63 @@
 
         <div class="mesa-grade">
             <div class="coluna-jogo">
-                <section class="card-stats destaque-mesa">
-                    <div class="mesa-topo">
-                        <div>
+                <section class="card-stats destaque-mesa" id="cardRoda">
+                    <h2 id="tituloMesa">Mesa compartilhada</h2>
+
+                    <div class="status-bar fase-apostando" id="statusBar">
+                        <div class="status-info">
                             <span class="badge-fase apostando" id="badgeFase">apostas abertas</span>
-                            <h2 id="tituloMesa">Mesa compartilhada</h2>
-                            <p class="fonte">Rodada <span id="idRodada">-</span> - <span id="faseTexto">aguardando</span></p>
+                            <span class="status-fase" id="faseTexto">aguardando</span>
+                            <span class="status-rodada">Rodada <strong id="idRodada">-</strong></span>
                         </div>
 
                         <div class="contador-bloco">
                             <strong id="contador">0</strong>
                             <span id="contadorRotulo">para fechar as apostas</span>
                         </div>
-                    </div>
 
-                    <div class="barra-fase"><span id="barraFase"></span></div>
+                        <div class="barra-fase"><span id="barraFase"></span></div>
+                    </div>
 
                     <div class="palco-mesa">
                         <div class="numero-grande" id="numeroGrande">?</div>
                         <span class="fonte-roda" id="legendaRoda">Apostas abertas</span>
                     </div>
 
+                    <p class="titulo-secao-mini">Últimos números</p>
                     <div class="historico-numeros" id="historicoNumeros"></div>
+
+                    <div class="resumo-resultado" id="resumoResultado" hidden>
+                        <p class="titulo-secao-mini" id="tituloResultado">Quem ganhou e quem perdeu</p>
+                        <div id="listaResultado" class="lista-resultado"></div>
+                    </div>
                 </section>
 
                 <section class="card-stats">
                     <h2>Fazer aposta</h2>
-                    <p class="fonte">Escolha a ficha, depois uma cor ou um número. Todos jogam no mesmo sorteio.</p>
 
+                    <p class="titulo-secao-mini">1. Valor da ficha</p>
                     <div class="fichas" id="fichas"></div>
 
-                    <div class="botoes-cor">
-                        <button class="botao-cor red" data-cor="red">Red <small>paga 2x</small></button>
-                        <button class="botao-cor black" data-cor="black">Black <small>paga 2x</small></button>
+                    <div class="campo-valor">
+                        <label for="valorAposta">Ou digite o valor da aposta (R$)</label>
+                        <input type="number" id="valorAposta" min="1" max="1000" step="0.01" inputmode="decimal"
+                            placeholder="Ex.: 250" autocomplete="off">
+                        <span class="aviso-valor" id="avisoValor"></span>
                     </div>
 
+                    <p class="titulo-secao-mini">2. Cor - ganha 2x</p>
+                    <div class="botoes-cor">
+                        <button class="botao-cor red" data-cor="red">Red</button>
+                        <button class="botao-cor black" data-cor="black">Black</button>
+                    </div>
+
+                    <p class="titulo-secao-mini">Ou um número - ganha 36x</p>
                     <div class="grade-numeros" id="gradeNumeros"></div>
+
+                    <div id="minhasApostas" class="lista-apostas"></div>
+
+                    <div id="mensagem" class="mensagem"></div>
 
                     <div class="resumo-apostas">
                         <div class="item-stats">
@@ -111,7 +133,7 @@
                             <strong id="meuTotal">R$ 0,00</strong>
                         </div>
                         <div class="item-stats">
-                            <span class="rotulo">Total na mesa</span>
+                            <span class="rotulo">Na mesa</span>
                             <strong id="totalMesa">R$ 0,00</strong>
                         </div>
                         <div class="item-stats">
@@ -119,10 +141,6 @@
                             <strong id="meuSaldo">-</strong>
                         </div>
                     </div>
-
-                    <div id="minhasApostas" class="lista-apostas"></div>
-
-                    <div id="mensagem" class="mensagem"></div>
                 </section>
             </div>
 
@@ -139,7 +157,7 @@
                         <h2>Na mesa</h2>
                         <span class="contagem" id="contagemPessoas">0</span>
                     </div>
-                    <p class="fonte">Todos que estão com a mesa aberta agora (<span id="contagemApostando">0</span> apostando)</p>
+                    <p class="fonte">Todos com a mesa aberta agora (<span id="contagemApostando">0</span> apostando)</p>
 
                     <div id="listaParticipantes" class="lista-participantes"></div>
                 </section>
@@ -201,6 +219,8 @@
         };
 
         let valoresFicha = FICHAS[1];
+        let valorDigitado = null;
+        let valorInvalido = false;
         let estadoAtual = null;
         let cores = {};
         let prazoFase = null;
@@ -252,8 +272,63 @@
             return String(nome || "?").trim().slice(0, 1).toUpperCase();
         }
 
+        function arredondar(valor) {
+            return Math.round((Number(valor) + Number.EPSILON) * 100) / 100;
+        }
+
         function linkDeConvite() {
             return window.location.origin + "/front/roleta-mesa?codigo=" + encodeURIComponent(codigoSessao);
+        }
+
+        // ------------------------------------------------------------- valor da aposta
+
+        function valorAtual() {
+            return valorDigitado === null ? valoresFicha : valorDigitado;
+        }
+
+        function validarValor() {
+            const apostaMinima = (estadoAtual && estadoAtual.apostaMinima) || 1;
+            const apostaMaxima = (estadoAtual && estadoAtual.apostaMaxima) || 1000;
+            const saldo = estadoAtual ? estadoAtual.saldo : null;
+            const valor = valorAtual();
+            let aviso = "";
+
+            if (valorDigitado === null) {
+                // Ficha escolhida: so avisa quando nao ha saldo para ela
+                if (saldo !== null && valor > saldo) {
+                    aviso = "Saldo insuficiente para " + formatarReal(valor) + " (disponivel: " + formatarReal(saldo) + ")";
+                }
+            } else if (isNaN(valor) || valor <= 0) {
+                aviso = "Digite um valor para apostar";
+            } else if (valor < apostaMinima) {
+                aviso = "Aposta mínima é " + formatarReal(apostaMinima);
+            } else if (valor > apostaMaxima) {
+                aviso = "Aposta máxima é " + formatarReal(apostaMaxima);
+            } else if (saldo !== null && valor > saldo) {
+                aviso = "Saldo insuficiente (disponível: " + formatarReal(saldo) + ")";
+            }
+
+            valorInvalido = aviso !== "";
+            elemento('avisoValor').textContent = aviso;
+            elemento('valorAposta').classList.toggle('invalido', valorInvalido);
+
+            return !valorInvalido;
+        }
+
+        function usarFicha(botao) {
+            valoresFicha = Number(botao.getAttribute('data-ficha'));
+            valorDigitado = null;
+            elemento('valorAposta').value = "";
+            document.querySelectorAll('[data-ficha]').forEach(item => item.classList.toggle('ativa', item === botao));
+            validarValor();
+        }
+
+        function usarValorDigitado(texto) {
+            const limpo = String(texto || "").trim().replace(",", ".");
+            valorDigitado = limpo === "" ? null : Number(limpo);
+
+            document.querySelectorAll('[data-ficha]').forEach(item => item.classList.remove('ativa'));
+            validarValor();
         }
 
         // ------------------------------------------------------------- mesa
@@ -345,57 +420,7 @@
             });
         }
 
-        function renderizarMinhasApostas(dados, resultadoVisivel) {
-            const apostas = dados.minhasApostas || [];
-
-            if (apostas.length === 0) {
-                elemento('minhasApostas').innerHTML = '<p class="fonte">Você ainda não apostou nesta rodada.</p>';
-                return;
-            }
-
-            const pago = resultadoVisivel && apostas.every(aposta => aposta.ganhou !== null && aposta.ganhou !== undefined);
-
-            elemento('minhasApostas').innerHTML = agruparPorPonto(apostas)
-                .map(ponto => linhaGrupoAposta(ponto, pago))
-                .join('');
-        }
-
-        // ------------------------------------------------------------- apostas da rodada
-
-        function arredondar(valor) {
-            return Math.round((Number(valor) + Number.EPSILON) * 100) / 100;
-        }
-
-        function agruparApostas(apostas) {
-            const jogadores = {};
-
-            (apostas || []).forEach(aposta => {
-                const chave = String(aposta.idJogador);
-                const jogador = jogadores[chave] || (jogadores[chave] = {
-                    idJogador: chave,
-                    nome: aposta.nome,
-                    total: 0,
-                    recebido: 0,
-                    lucro: 0,
-                    quantidade: 0,
-                    pago: true,
-                    pontos: []
-                });
-
-                jogador.total = arredondar(jogador.total + aposta.valorAposta);
-                jogador.recebido = arredondar(jogador.recebido + (aposta.valorRecebido || 0));
-                jogador.lucro = arredondar(jogador.lucro + (aposta.lucro || 0));
-                jogador.quantidade++;
-                jogador.pago = jogador.pago && aposta.ganhou !== null && aposta.ganhou !== undefined;
-                jogador.pontos.push(aposta);
-            });
-
-            return Object.keys(jogadores).map(chave => {
-                const jogador = jogadores[chave];
-                jogador.resumo = agruparPorPonto(jogador.pontos);
-                return jogador;
-            }).sort((a, b) => b.total - a.total || String(a.nome).localeCompare(String(b.nome)));
-        }
+        // ------------------------------------------------------------- apostas
 
         // Junta apostas iguais (mesma cor ou mesmo numero) numa linha so
         function agruparPorPonto(apostas) {
@@ -428,6 +453,35 @@
             return Object.keys(pontos).map(chave => pontos[chave]).sort((a, b) => b.total - a.total);
         }
 
+        function agruparApostas(apostas) {
+            const jogadores = {};
+
+            (apostas || []).forEach(aposta => {
+                const chave = String(aposta.idJogador);
+                const jogador = jogadores[chave] || (jogadores[chave] = {
+                    idJogador: chave,
+                    nome: aposta.nome,
+                    total: 0,
+                    lucro: 0,
+                    quantidade: 0,
+                    pago: true,
+                    pontos: []
+                });
+
+                jogador.total = arredondar(jogador.total + aposta.valorAposta);
+                jogador.lucro = arredondar(jogador.lucro + (aposta.lucro || 0));
+                jogador.quantidade++;
+                jogador.pago = jogador.pago && aposta.ganhou !== null && aposta.ganhou !== undefined;
+                jogador.pontos.push(aposta);
+            });
+
+            return Object.keys(jogadores).map(chave => {
+                const jogador = jogadores[chave];
+                jogador.resumo = agruparPorPonto(jogador.pontos);
+                return jogador;
+            }).sort((a, b) => b.total - a.total || String(a.nome).localeCompare(String(b.nome)));
+        }
+
         function linhaGrupoAposta(ponto, pago) {
             const vezes = ponto.quantidade > 1 ? '<span class="aposta-vezes">&times;' + ponto.quantidade + '</span>' : '';
             const unitario = ponto.quantidade > 1 && ponto.valores.length === 1
@@ -450,6 +504,21 @@
                 '</div>';
         }
 
+        function renderizarMinhasApostas(dados, resultadoVisivel) {
+            const apostas = dados.minhasApostas || [];
+
+            if (apostas.length === 0) {
+                elemento('minhasApostas').innerHTML = '<p class="fonte">Você ainda não apostou nesta rodada.</p>';
+                return;
+            }
+
+            const pago = resultadoVisivel && apostas.every(aposta => aposta.ganhou !== null && aposta.ganhou !== undefined);
+
+            elemento('minhasApostas').innerHTML =
+                '<p class="titulo-secao-mini">Suas apostas nesta rodada</p>' +
+                agruparPorPonto(apostas).map(ponto => linhaGrupoAposta(ponto, pago)).join('');
+        }
+
         function renderizarApostasRodada(dados, resultadoVisivel) {
             const titulos = TITULOS_APOSTAS[dados.fase] || TITULOS_APOSTAS.apostando;
             const grupos = agruparApostas(dados.apostas);
@@ -462,12 +531,11 @@
                 return;
             }
 
-            const pago = resultadoVisivel;
             const totalApostas = grupos.reduce((soma, grupo) => soma + grupo.quantidade, 0);
 
             const cartoes = grupos.map(grupo => {
                 const eu = String(grupo.idJogador) === String(usuario.id);
-                const situacao = pago
+                const situacao = resultadoVisivel
                     ? '<span class="' + classeLucro(grupo.lucro) + '">' + comSinal(grupo.lucro) + '</span>'
                     : '<span class="pendente">em jogo</span>';
 
@@ -478,7 +546,7 @@
                     (grupo.quantidade > 1 ? ' apostas' : ' aposta') + '</span>' +
                     situacao +
                     '</div>' +
-                    '<div class="aposta-itens">' + grupo.resumo.map(ponto => linhaGrupoAposta(ponto, pago)).join('') + '</div>' +
+                    '<div class="aposta-itens">' + grupo.resumo.map(ponto => linhaGrupoAposta(ponto, resultadoVisivel)).join('') + '</div>' +
                     '</div>';
             }).join('');
 
@@ -486,6 +554,8 @@
                 '<p class="fonte total-rodada">Total na mesa: <strong>' + formatarReal(dados.totalNaMesa) + '</strong> em ' +
                 totalApostas + (totalApostas > 1 ? ' apostas' : ' aposta') + '</p>';
         }
+
+        // ------------------------------------------------------------- participantes
 
         function situacaoParticipante(pessoa, resultadoVisivel) {
             if (!pessoa.online) {
@@ -723,53 +793,61 @@
             }
         }
 
-        // ------------------------------------------------------------- estado
+        // ------------------------------------------------------------- resultado na roda
 
-        function renderizarEstado(dados) {
-            estadoAtual = dados;
-            renderizarSessao(dados);
+        function renderizarResultadoRodada(dados, resultadoVisivel) {
+            const painel = elemento('resumoResultado');
 
-            if (dados.expirada) {
-                atualizarFase(dados);
-                ajustarBloqueio("expirada");
-                animarRoda(dados);
-                exibirMensagem(elemento('mensagem'), '');
+            if (!resultadoVisivel) {
+                painel.hidden = true;
                 return;
             }
 
-            prazoFase = Date.now() + (dados.segundosRestantes || 0) * 1000;
+            const jogadores = (dados.jogadores || []).slice().sort((a, b) => (b.lucro || 0) - (a.lucro || 0));
+            const ganharam = jogadores.filter(jogador => jogador.lucro > 0).length;
+            const perderam = jogadores.filter(jogador => jogador.lucro < 0).length;
 
-            // O sorteio ja existe no banco desde o inicio do giro: nada de resultado antes da roda revelar
-            const resultadoVisivel = dados.fase === "resultado" && dados.sorteada;
+            elemento('tituloResultado').textContent = ganharam + (ganharam === 1 ? " ganhou" : " ganharam") +
+                " e " + perderam + (perderam === 1 ? " perdeu" : " perderam");
 
-            elemento('idRodada').textContent = '#' + dados.idRodada;
-            elemento('meuTotal').textContent = formatarReal(dados.meuTotal);
-            elemento('totalMesa').textContent = formatarReal(dados.totalNaMesa);
-            elemento('meuSaldo').textContent = formatarReal(dados.saldo);
-            elemento('contador').textContent = dados.segundosRestantes;
+            elemento('listaResultado').innerHTML = jogadores.map(jogador => {
+                const eu = String(jogador.idJogador) === String(usuario.id);
 
-            atualizarFase(dados);
-            animarRoda(dados);
-            destacarNumeroSorteado(dados);
-            renderizarHistorico(dados.historico);
-            renderizarMinhasApostas(dados, resultadoVisivel);
-            renderizarApostasRodada(dados, resultadoVisivel);
-            renderizarParticipantes(dados.participantes, resultadoVisivel);
-            ajustarBloqueio(dados.fase);
-            adicionarMensagens(dados.chat);
+                return '<div class="linha-resultado ' + classeLucro(jogador.lucro) + (eu ? ' eu' : '') + '">' +
+                    '<span class="nome">' + escapar(jogador.nome) + (eu ? ' <span class="tag-voce">você</span>' : '') + '</span>' +
+                    '<span class="apostado">' + formatarReal(jogador.total) + '</span>' +
+                    '<strong>' + comSinal(jogador.lucro || 0) + '</strong>' +
+                    '</div>';
+            }).join('');
 
-            if (dados.saldo !== undefined && dados.saldo !== null) {
-                elemento('saldoJogador').textContent = formatarReal(dados.saldo);
-                salvarUsuario({ id: usuario.id, usuario: usuario.usuario, saldo: dados.saldo });
-            }
+            painel.hidden = false;
         }
+
+        function irParaSorteio() {
+            // Nao interrompe quem esta digitando nem pula se a roda ja esta na tela
+            if (document.activeElement && document.activeElement.tagName === "INPUT") {
+                return;
+            }
+
+            const card = elemento('cardRoda');
+            const caixa = card.getBoundingClientRect();
+
+            if (caixa.top >= -8 && caixa.top <= 140) {
+                return;
+            }
+
+            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // ------------------------------------------------------------- estado
 
         function atualizarFase(dados) {
             const fase = dados.expirada ? "expirada" : dados.fase;
 
-            elemento('faseTexto').textContent = nomeFase(fase);
+            elemento('statusBar').className = 'status-bar fase-' + fase;
             elemento('badgeFase').textContent = nomeFase(fase);
             elemento('badgeFase').className = 'badge-fase ' + fase;
+            elemento('faseTexto').textContent = nomeFase(fase);
             elemento('contadorRotulo').textContent = ROTULOS_CONTADOR[dados.fase] || "sessão encerrada";
         }
 
@@ -785,6 +863,53 @@
             elemento('contador').textContent = restante;
             elemento('barraFase').style.width = Math.max(0, Math.min(100, (restante / duracao) * 100)) + '%';
             elemento('barraFase').className = 'fase-' + estadoAtual.fase;
+        }
+
+        function renderizarEstado(dados) {
+            const faseAnterior = estadoAtual ? estadoAtual.fase : null;
+
+            estadoAtual = dados;
+            renderizarSessao(dados);
+            atualizarFase(dados);
+
+            if (dados.expirada) {
+                ajustarBloqueio("expirada");
+                animarRoda(dados);
+                elemento('resumoResultado').hidden = true;
+                exibirMensagem(elemento('mensagem'), '');
+                return;
+            }
+
+            prazoFase = Date.now() + (dados.segundosRestantes || 0) * 1000;
+
+            // O sorteio ja existe no banco desde o inicio do giro: nada de resultado antes da roda revelar
+            const resultadoVisivel = dados.fase === "resultado" && dados.sorteada;
+
+            elemento('idRodada').textContent = '#' + dados.idRodada;
+            elemento('meuTotal').textContent = formatarReal(dados.meuTotal);
+            elemento('totalMesa').textContent = formatarReal(dados.totalNaMesa);
+            elemento('meuSaldo').textContent = formatarReal(dados.saldo);
+            elemento('contador').textContent = dados.segundosRestantes;
+
+            animarRoda(dados);
+            destacarNumeroSorteado(dados);
+            renderizarHistorico(dados.historico);
+            renderizarResultadoRodada(dados, resultadoVisivel);
+            renderizarMinhasApostas(dados, resultadoVisivel);
+            renderizarApostasRodada(dados, resultadoVisivel);
+            renderizarParticipantes(dados.participantes, resultadoVisivel);
+            ajustarBloqueio(dados.fase);
+            validarValor();
+            adicionarMensagens(dados.chat);
+
+            if (faseAnterior && faseAnterior !== "girando" && dados.fase === "girando") {
+                irParaSorteio();
+            }
+
+            if (dados.saldo !== undefined && dados.saldo !== null) {
+                elemento('saldoJogador').textContent = formatarReal(dados.saldo);
+                salvarUsuario({ id: usuario.id, usuario: usuario.usuario, saldo: dados.saldo });
+            }
         }
 
         async function atualizarTela() {
@@ -816,7 +941,7 @@
             }, 250);
         }
 
-        // ------------------------------------------------------------- apostas
+        // ------------------------------------------------------------- apostar
 
         async function apostar(aposta) {
             if (apostando) {
@@ -828,13 +953,18 @@
                 return;
             }
 
+            if (!validarValor()) {
+                exibirMensagem(elemento('mensagem'), elemento('avisoValor').textContent, 'erro');
+                return;
+            }
+
             apostando = true;
 
             try {
                 const dados = await api('/front/api/roleta-mesa/apostar', 'POST', {
                     idUsuario: usuario.id,
                     bet: aposta,
-                    bet_amount: valoresFicha,
+                    bet_amount: valorAtual(),
                     idRodada: estadoAtual.idRodada,
                     codigo: codigoSessao
                 });
@@ -853,8 +983,7 @@
             const ficha = evento.target.closest('[data-ficha]');
 
             if (ficha) {
-                valoresFicha = Number(ficha.getAttribute('data-ficha'));
-                document.querySelectorAll('[data-ficha]').forEach(botao => botao.classList.toggle('ativa', botao === ficha));
+                usarFicha(ficha);
                 return;
             }
 
@@ -875,6 +1004,7 @@
         elemento('btnChatFlutuante').addEventListener('click', abrirChat);
         elemento('btnFecharChat').addEventListener('click', fecharChat);
         elemento('chatAviso').addEventListener('click', abrirChat);
+        elemento('valorAposta').addEventListener('input', function () { usarValorDigitado(this.value); });
         elemento('btnCriarSessao').addEventListener('click', criarSessao);
         elemento('btnNovaSessao').addEventListener('click', criarSessao);
         elemento('btnCopiarLink').addEventListener('click', copiarLink);

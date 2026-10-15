@@ -8,12 +8,17 @@ class BaralhoDb:
         self.__cartas: list[Carta] = []
 
     @classmethod
-    def newBaralhoFromDb(cls, qtdeBaralhos: int = 4):
+    def newBaralhoFromDb(cls, qtdeBaralhos: int = 4, semente=None):
         baralho = cls()
         cartasBase = CartaRepo.newRepo().consultarTodos()
         baralhoCompleto = cartasBase * qtdeBaralhos
+
+        if semente is None:
+            random.shuffle(baralhoCompleto)
+        else:
+            random.Random(semente).shuffle(baralhoCompleto)
+
         baralho.setCartas(baralhoCompleto)
-        random.shuffle(baralho.getCartas())
         return baralho
     
     def deal(self, idCarta: str = None):
