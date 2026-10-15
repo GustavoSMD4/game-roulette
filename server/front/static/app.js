@@ -1,4 +1,5 @@
 const CHAVE_USUARIO = "gameRouletteUsuario";
+const CHAVE_MENU = "gameRouletteMenuRecolhido";
 
 function salvarUsuario(usuario) {
     localStorage.setItem(CHAVE_USUARIO, JSON.stringify(usuario));
@@ -69,4 +70,55 @@ function tratarSessaoInvalida(error) {
     }
 
     return false;
+}
+
+function iniciarMenu() {
+    const botao = document.getElementById("btnMenu");
+    const recolher = document.getElementById("btnRecolher");
+    const sidebar = document.getElementById("sidebar");
+    const backdrop = document.getElementById("backdrop");
+
+    if (!sidebar) {
+        return;
+    }
+
+    if (localStorage.getItem(CHAVE_MENU) === "1") {
+        document.body.classList.add("menu-recolhido");
+    }
+
+    if (recolher) {
+        recolher.addEventListener("click", () => {
+            document.body.classList.toggle("menu-recolhido");
+            localStorage.setItem(CHAVE_MENU, document.body.classList.contains("menu-recolhido") ? "1" : "0");
+        });
+    }
+
+    const fechar = () => {
+        sidebar.classList.remove("aberta");
+        backdrop.classList.remove("aberta");
+    };
+
+    if (botao) {
+        botao.addEventListener("click", () => {
+            sidebar.classList.toggle("aberta");
+            backdrop.classList.toggle("aberta");
+        });
+    }
+
+    if (backdrop) {
+        backdrop.addEventListener("click", fechar);
+    }
+
+    document.querySelectorAll(".item-nav").forEach(item => {
+        const caminho = window.location.pathname;
+
+        item.classList.toggle("ativo", item.getAttribute("href") === caminho);
+        item.addEventListener("click", fechar);
+    });
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", iniciarMenu);
+} else {
+    iniciarMenu();
 }

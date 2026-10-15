@@ -8,19 +8,33 @@
     <link rel="stylesheet" href="/front/static/style.css">
 </head>
 
-<body>
-    <div class="topo">
-        <h1>Estatísticas</h1>
-        <div>
-            <span id="nomeJogador">-</span> | <span class="saldo" id="saldoJogador">-</span>
+<body class="com-sidebar">
+    <button class="btn-menu" id="btnMenu" aria-label="Abrir menu">&#9776;</button>
+    <div class="backdrop" id="backdrop"></div>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-marca"><span class="marca-texto">Game Roulette</span></div>
+
+        <nav class="sidebar-nav">
+            <a class="item-nav" href="/front/roleta"><span class="rotulo-nav">Roleta</span></a>
+            <a class="item-nav" href="/front/blackjack"><span class="rotulo-nav">Blackjack</span></a>
+            <a class="item-nav" href="/front/estatisticas"><span class="rotulo-nav">Estatísticas</span></a>
+            <a class="item-nav" href="/front/conta"><span class="rotulo-nav">Minha conta</span></a>
+        </nav>
+
+        <div class="sidebar-rodape">
+            <div class="usuario">
+                <span id="nomeJogador">-</span>
+                <strong class="saldo" id="saldoJogador">-</strong>
+            </div>
+
+            <button class="secundario largo" onclick="sair()"><span class="rotulo-botao">Sair</span></button>
         </div>
-        <div class="acoes" style="margin: 0;">
-            <button class="secundario" onclick="window.location.href='/front/roleta'">Roleta</button>
-            <button class="secundario" onclick="window.location.href='/front/blackjack'">Blackjack</button>
-            <button class="secundario" onclick="window.location.href='/front/conta'">Minha conta</button>
-            <button class="secundario" onclick="sair()">Sair</button>
-        </div>
-    </div>
+    </aside>
+
+    <button class="btn-recolher" id="btnRecolher" aria-label="Recolher menu"></button>
+
+    <h1 class="titulo-pagina">Estatísticas</h1>
 
     <div class="container largo">
         <section class="card-stats destaque-servidor">
@@ -258,20 +272,20 @@
 
             const linhas = maos.map(mao =>
                 '<tr>' +
+                '<td>' + (mao.idJogo
+                    ? '<button class="secundario botao-replay" data-replay="' + mao.idJogo + '" data-indice="' + (mao.indiceMao || 0) + '">Ver replay</button>'
+                    : '<span class="aviso">-</span>') + '</td>' +
                 '<td>' + formatarData(mao.dataHora) + '</td>' +
                 '<td>' + formatarReal(mao.valorAposta) + '</td>' +
                 '<td>' + mao.valorJogador + ' x ' + mao.valorDealer + '</td>' +
                 '<td>' + (mao.indiceMao > 0 ? '<strong>Mão ' + (mao.indiceMao + 1) + '</strong> - ' : '') + (mao.titulo || mao.resultado || '-') + '</td>' +
                 '<td class="' + classeLucro(mao.lucro) + '">' + comSinal(mao.lucro) + '</td>' +
-                '<td>' + (mao.idJogo
-                    ? '<button class="secundario" data-replay="' + mao.idJogo + '" data-indice="' + (mao.indiceMao || 0) + '">Ver replay</button>'
-                    : '<span class="aviso">-</span>') + '</td>' +
                 '</tr>'
             ).join('');
 
-            return '<table class="tabela-historico"><thead><tr>' +
-                '<th>Data</th><th>Aposta</th><th>Você x Dealer</th><th>Resultado</th><th>Lucro</th><th></th>' +
-                '</tr></thead><tbody>' + linhas + '</tbody></table>';
+            return '<div class="tabela-wrap"><table class="tabela-historico"><thead><tr>' +
+                '<th></th><th>Data</th><th>Aposta</th><th>Você x Dealer</th><th>Resultado</th><th>Lucro</th>' +
+                '</tr></thead><tbody>' + linhas + '</tbody></table></div>';
         }
 
         function htmlListaJogadores(jogadores) {
@@ -294,10 +308,10 @@
                 '</tr>'
             ).join('');
 
-            return '<table class="tabela-historico"><thead><tr>' +
+            return '<div class="tabela-wrap"><table class="tabela-historico"><thead><tr>' +
                 '<th>Jogador</th><th>Saldo</th><th>Total</th><th>Apostado</th><th>Lucro total</th>' +
                 '<th>Roleta (lucro)</th><th>Blackjack (lucro)</th><th></th>' +
-                '</tr></thead><tbody>' + linhas + '</tbody></table>';
+                '</tr></thead><tbody>' + linhas + '</tbody></table></div>';
         }
 
         async function carregarSaldo() {
@@ -351,6 +365,7 @@
                 elemento('selecionadoRoleta').innerHTML = htmlRoleta(dados.roleta);
                 elemento('selecionadoBlackjack').innerHTML = htmlBlackjack(dados.blackjack.stats);
                 elemento('selecionadoHistorico').innerHTML = htmlHistorico(dados.blackjack.historico);
+                definirCardRecolhido(elemento('cardJogadorSelecionado'), false);
                 elemento('cardJogadorSelecionado').style.display = 'block';
                 elemento('cardJogadorSelecionado').scrollIntoView({ behavior: 'smooth', block: 'start' });
                 exibirMensagem(mensagem, '');
@@ -487,6 +502,7 @@
                 elemento('replayFinalLucro').textContent = comSinal(dados.resultado.lucro);
                 elemento('replayFinalLucro').className = classeLucro(dados.resultado.lucro);
 
+                definirCardRecolhido(elemento('cardReplay'), false);
                 elemento('cardReplay').style.display = 'block';
                 elemento('cardReplay').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
@@ -547,6 +563,85 @@
                 renderReplay(passoReplay);
             }
         });
+
+        function definirCardRecolhido(card, recolhido) {
+            if (!card) {
+                return;
+            }
+
+            card.classList.toggle('recolhido', recolhido);
+
+            const botao = card.querySelector('.btn-card-toggle');
+
+            if (botao) {
+                botao.setAttribute('aria-expanded', recolhido ? 'false' : 'true');
+            }
+        }
+
+        function iniciarCardsColapsaveis() {
+            const cards = Array.prototype.slice.call(document.querySelectorAll('.card-stats'));
+
+            cards.forEach(function (card, indice) {
+                const cabecalho = card.querySelector('.cabecalho-selecionado') || card.querySelector('h2');
+
+                if (!cabecalho) {
+                    return;
+                }
+
+                const titulo = cabecalho.querySelector('h2') || cabecalho;
+                let primeiroFilho;
+
+                if (cabecalho.classList.contains('cabecalho-selecionado')) {
+                    primeiroFilho = cabecalho.nextElementSibling;
+                } else {
+                    const seguinte = cabecalho.nextElementSibling;
+                    const fonte = seguinte && seguinte.classList.contains('fonte') ? seguinte : null;
+                    primeiroFilho = (fonte || cabecalho).nextElementSibling;
+                }
+
+                const conteudo = document.createElement('div');
+                conteudo.className = 'card-conteudo';
+                conteudo.id = 'card-conteudo-' + indice;
+
+                while (primeiroFilho) {
+                    const proximo = primeiroFilho.nextElementSibling;
+                    conteudo.appendChild(primeiroFilho);
+                    primeiroFilho = proximo;
+                }
+
+                card.appendChild(conteudo);
+
+                const botao = document.createElement('button');
+                botao.type = 'button';
+                botao.className = 'btn-card-toggle';
+                botao.setAttribute('aria-controls', conteudo.id);
+                botao.setAttribute('aria-expanded', 'true');
+                botao.innerHTML = '<span class="icone-seta"></span>';
+
+                function alternar() {
+                    const recolhido = !card.classList.contains('recolhido');
+                    const nome = (titulo.textContent || 'card').trim();
+
+                    botao.setAttribute('aria-label', (recolhido ? 'Expandir ' : 'Minimizar ') + nome);
+                    botao.title = botao.getAttribute('aria-label');
+                    definirCardRecolhido(card, recolhido);
+                }
+
+                botao.addEventListener('click', alternar);
+                botao.setAttribute('aria-label', 'Minimizar ' + (titulo.textContent || 'card').trim());
+                botao.title = botao.getAttribute('aria-label');
+
+                if (titulo.tagName === 'H2') {
+                    titulo.classList.add('titulo-clicavel');
+                    titulo.addEventListener('click', alternar);
+                }
+
+                card.classList.add('colapsavel');
+                card.appendChild(botao);
+            });
+        }
+
+        iniciarCardsColapsaveis();
 
         if (usuario) {
             elemento('nomeJogador').textContent = usuario.usuario;

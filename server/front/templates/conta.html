@@ -8,16 +8,52 @@
     <link rel="stylesheet" href="/front/static/style.css">
 </head>
 
-<body>
-    <div class="container">
-        <h2>Minha conta</h2>
+<body class="com-sidebar">
+    <button class="btn-menu" id="btnMenu" aria-label="Abrir menu">&#9776;</button>
+    <div class="backdrop" id="backdrop"></div>
 
-        <p><strong>Usuário:</strong> <span id="nomeUsuario">-</span></p>
-        <p><strong>Saldo disponível:</strong> <span id="saldo">-</span></p>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-marca"><span class="marca-texto">Game Roulette</span></div>
 
-        <h3>Adicionar saldo</h3>
+        <nav class="sidebar-nav">
+            <a class="item-nav" href="/front/roleta"><span class="rotulo-nav">Roleta</span></a>
+            <a class="item-nav" href="/front/blackjack"><span class="rotulo-nav">Blackjack</span></a>
+            <a class="item-nav" href="/front/estatisticas"><span class="rotulo-nav">Estatísticas</span></a>
+            <a class="item-nav" href="/front/conta"><span class="rotulo-nav">Minha conta</span></a>
+        </nav>
+
+        <div class="sidebar-rodape">
+            <div class="usuario">
+                <span id="nomeUsuario">-</span>
+                <strong class="saldo" id="saldo">-</strong>
+            </div>
+
+            <button class="secundario largo" onclick="sair()"><span class="rotulo-botao">Sair</span></button>
+        </div>
+    </aside>
+
+    <button class="btn-recolher" id="btnRecolher" aria-label="Recolher menu"></button>
+
+    <h1 class="titulo-pagina">Minha conta</h1>
+
+    <div class="container estreito">
+        <section class="card-stats resumo-conta">
+            <div class="linha-conta">
+                <span class="rotulo-conta">Usuário</span>
+                <strong id="contaUsuario">-</strong>
+            </div>
+
+            <div class="linha-conta">
+                <span class="rotulo-conta">Saldo disponível</span>
+                <strong class="saldo-destaque" id="contaSaldo">-</strong>
+            </div>
+        </section>
+
+        <h2>Adicionar saldo</h2>
+        <p class="fonte">O saldo entra na hora e já pode ser usado nas apostas.</p>
+
         <form id="formDeposito">
-            <label for="valor">Valor do depósito</label>
+            <label for="valor">Valor do depósito (R$)</label>
             <input type="number" id="valor" min="0.01" step="0.01" placeholder="0,00" required>
 
             <button type="submit" class="largo">Depositar</button>
@@ -28,8 +64,6 @@
         <div class="acoes">
             <button onclick="window.location.href='/front/roleta'">Jogar Roleta</button>
             <button onclick="window.location.href='/front/blackjack'">Jogar Blackjack</button>
-            <button class="secundario" onclick="window.location.href='/front/estatisticas'">Estatísticas</button>
-            <button class="secundario" onclick="sair()">Sair</button>
         </div>
     </div>
 
@@ -40,6 +74,8 @@
         function mostrar(conta) {
             document.getElementById('nomeUsuario').textContent = conta.usuario;
             document.getElementById('saldo').textContent = formatarReal(conta.saldo);
+            document.getElementById('contaUsuario').textContent = conta.usuario;
+            document.getElementById('contaSaldo').textContent = formatarReal(conta.saldo);
         }
 
         async function carregarConta() {

@@ -8,19 +8,33 @@
     <link rel="stylesheet" href="/front/static/style.css">
 </head>
 
-<body>
-    <div class="topo">
-        <h1>Blackjack</h1>
-        <div>
-            <span id="nomeJogador">-</span> | <span class="saldo" id="saldoJogador">-</span>
+<body class="com-sidebar">
+    <button class="btn-menu" id="btnMenu" aria-label="Abrir menu">&#9776;</button>
+    <div class="backdrop" id="backdrop"></div>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-marca"><span class="marca-texto">Game Roulette</span></div>
+
+        <nav class="sidebar-nav">
+            <a class="item-nav" href="/front/roleta"><span class="rotulo-nav">Roleta</span></a>
+            <a class="item-nav" href="/front/blackjack"><span class="rotulo-nav">Blackjack</span></a>
+            <a class="item-nav" href="/front/estatisticas"><span class="rotulo-nav">Estatísticas</span></a>
+            <a class="item-nav" href="/front/conta"><span class="rotulo-nav">Minha conta</span></a>
+        </nav>
+
+        <div class="sidebar-rodape">
+            <div class="usuario">
+                <span id="nomeJogador">-</span>
+                <strong class="saldo" id="saldoJogador">-</strong>
+            </div>
+
+            <button class="secundario largo" onclick="sair()"><span class="rotulo-botao">Sair</span></button>
         </div>
-        <div class="acoes" style="margin: 0;">
-            <button class="secundario" onclick="window.location.href='/front/roleta'">Roleta</button>
-            <button class="secundario" onclick="window.location.href='/front/estatisticas'">Estatísticas</button>
-            <button class="secundario" onclick="window.location.href='/front/conta'">Minha conta</button>
-            <button class="secundario" onclick="sair()">Sair</button>
-        </div>
-    </div>
+    </aside>
+
+    <button class="btn-recolher" id="btnRecolher" aria-label="Recolher menu"></button>
+
+    <h1 class="titulo-pagina">Blackjack</h1>
 
     <div class="container largo">
         <div id="painelResultado" class="painel-resultado" style="display: none;">
