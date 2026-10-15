@@ -15,11 +15,16 @@ class MaoBlackjack:
         if req is None:
             return cls()
 
-        return cls(
+        mao = cls(
             int(req.get("indice") or 0),
             float(req.get("valor_aposta") or req.get("valorAposta") or 0),
             req.get("nome") or req.get("nome_jogador")
         )
+
+        if req.get("encerrada"):
+            mao.encerrar()
+
+        return mao
 
     def getIndice(self) -> int:
         return self.__indice
@@ -62,6 +67,7 @@ class MaoBlackjack:
             "indice": self.__indice,
             "nome": self.getNome(),
             "valorMao": self.getValorMao(),
+            "valoresParciais": self.__jogador.getValoresParciais(),
             "valorAposta": self.__valorAposta,
             "encerrada": self.__encerrada,
             "cartas": [carta.getDict() for carta in self.getCartas()]

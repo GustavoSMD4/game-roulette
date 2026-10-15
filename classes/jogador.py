@@ -14,10 +14,17 @@ class Jogador:
         return cls(idUsuario, nomeUsuario)
     
     def getValorMao(self):
+        return self.__valorDasCartas(self.__cartas)
+
+    def getValoresParciais(self):
+        """Valor da mão depois de cada carta, na ordem em que foram recebidas."""
+        return [self.__valorDasCartas(self.__cartas[:indice]) for indice in range(1, len(self.__cartas) + 1)]
+
+    def __valorDasCartas(self, cartas):
         valor = 0
         aces = 0
         
-        for carta in self.__cartas:
+        for carta in cartas:
             valor += carta.getValor()
             if carta.getValor() == 11:
                 aces += 1

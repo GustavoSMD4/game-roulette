@@ -62,6 +62,7 @@
 
         <div id="jogo" style="display: none;">
             <div class="acoes" id="acoes"></div>
+            <p class="aviso-acao" id="avisoAcoes"></p>
         </div>
 
         <div id="mensagem" class="mensagem"></div>
@@ -90,9 +91,50 @@
             return img;
         }
 
-        // Reconcilia a mão posição por posição: só cartas diferentes da tela entram animadas
+        const timersValor = new Map();
+
+        function agendarValor(elementoValor, valor, atraso) {
+            const timers = timersValor.get(elementoValor) || [];
+            timers.push(setTimeout(() => {
+                elementoValor.textContent = valor;
+            }, atraso));
+            timersValor.set(elementoValor, timers);
+        }
+
+        function cancelarValor(elementoValor) {
+            (timersValor.get(elementoValor) || []).forEach(clearTimeout);
+            timersValor.set(elementoValor, []);
+        }
+
+        // Mostra a soma crescendo junto com as cartas que vão entrando
+        function animarValor(elementoValor, novas, parciais, valorFinal, atrasoMs) {
+            cancelarValor(elementoValor);
+
+            const valores = parciais || [];
+
+            if (!novas || novas.length === 0) {
+                elementoValor.textContent = valorFinal;
+                return 0;
+            }
+
+            let tempo = 0;
+
+            novas.forEach(nova => {
+                const atraso = nova.ordem * atrasoMs + DURACAO_CARTA;
+                const valor = valores[nova.indice] !== undefined ? valores[nova.indice] : valorFinal;
+
+                tempo = Math.max(tempo, atraso);
+                agendarValor(elementoValor, valor, atraso);
+            });
+
+            return tempo;
+        }
+
+        // Reconcilia a mão posição por posição e devolve as cartas que entraram agora
         function sincronizarCartas(elementoCartas, cartas, atrasoMs) {
             const lista = cartas || [];
+            const base = elementoCartas.children.length;
+            const novas = [];
 
             lista.forEach((carta, indice) => {
                 const atual = elementoCartas.children[indice];
@@ -102,20 +144,23 @@
                 }
 
                 const img = criarImagemCarta(carta);
-                img.style.animationDelay = (indice * atrasoMs) + 'ms';
+                const ordem = Math.max(indice - base, 0);
+                img.style.animationDelay = (ordem * atrasoMs) + 'ms';
 
                 if (atual) {
                     elementoCartas.replaceChild(img, atual);
                 } else {
                     elementoCartas.appendChild(img);
                 }
+
+                novas.push({ indice: indice, ordem: ordem });
             });
 
             while (elementoCartas.children.length > lista.length) {
                 elementoCartas.removeChild(elementoCartas.lastChild);
             }
 
-            return Math.max(lista.length - 1, 0) * atrasoMs + DURACAO_CARTA;
+            return novas;
         }
 
         function criarBlocoMao(mao) {
@@ -149,10 +194,14 @@
                 const atual = mao.indice === estado.idMaoAtual && !estado.finalizado;
 
                 bloco.className = 'mao' + (atual ? ' atual' : '') + (mao.encerrada ? ' encerrada' : '');
-                bloco.querySelector('.valor').textContent = mao.valorMao;
                 bloco.querySelector('.aposta-mao').textContent = 'R$ ' + Number(mao.valorAposta || 0).toFixed(2);
 
-                tempo = Math.max(tempo, sincronizarCartas(bloco.querySelector('.cartas'), mao.cartas, ATRASO_CARTA));
+                const novas = sincronizarCartas(bloco.querySelector('.cartas'), mao.cartas, ATRASO_CARTA);
+                const tempoMao = animarValor(
+                    bloco.querySelector('.valor'), novas, mao.valoresParciais, mao.valorMao, ATRASO_CARTA
+                );
+
+                tempo = Math.max(tempo, tempoMao);
             });
 
             return tempo;
@@ -160,18 +209,44 @@
 
         function renderizarAcoes(acoes, finalizado) {
             const container = elemento('acoes');
+            const avisos = [];
             container.innerHTML = '';
+            elemento('avisoAcoes').textContent = '';
 
             if (finalizado) {
                 return;
             }
 
-            (acoes || []).forEach(acao => {
+            const lista = acoes || [];
+
+            if (lista.length === 0) {
+                // rede de segurança: nunca deixar a mesa sem ação possível
+                const botao = document.createElement('button');
+                botao.textContent = 'Nova rodada';
+                botao.addEventListener('click', iniciar);
+                container.appendChild(botao);
+                return;
+            }
+
+            lista.forEach(acao => {
                 const botao = document.createElement('button');
                 botao.textContent = acao.descricao || acao.nome;
-                botao.addEventListener('click', () => jogar(acao.codigo));
+
+                if (acao.habilitada === false) {
+                    botao.disabled = true;
+                    botao.title = acao.motivoIndisponivel || '';
+
+                    if (acao.motivoIndisponivel) {
+                        avisos.push((acao.descricao || acao.nome) + ': ' + acao.motivoIndisponivel);
+                    }
+                } else {
+                    botao.addEventListener('click', () => jogar(acao.codigo));
+                }
+
                 container.appendChild(botao);
             });
+
+            elemento('avisoAcoes').textContent = avisos.join(' ');
         }
 
         function atualizarSaldo(saldo) {
@@ -245,10 +320,15 @@
             const finalizado = Boolean(estado.finalizado);
             const cartasDealer = estado.dealer ? estado.dealer.cartas : [];
 
-            elemento('valorDealer').textContent = estado.dealer ? estado.dealer.valorMao : 0;
-
             const tempoJogador = renderizarMaosJogador(estado);
-            const tempoDealer = sincronizarCartas(elemento('cartasDealer'), cartasDealer, finalizado ? ATRASO_DEALER : ATRASO_CARTA);
+
+            const novasDealer = sincronizarCartas(elemento('cartasDealer'), cartasDealer, finalizado ? ATRASO_DEALER : ATRASO_CARTA);
+            const tempoDealer = animarValor(
+                elemento('valorDealer'), novasDealer,
+                estado.dealer ? estado.dealer.valoresParciais : [],
+                estado.dealer ? estado.dealer.valorMao : 0,
+                finalizado ? ATRASO_DEALER : ATRASO_CARTA
+            );
 
             renderizarAcoes(estado.acoes, finalizado);
 
@@ -274,6 +354,7 @@
             elemento('cartasDealer').innerHTML = '';
             elemento('maosJogador').innerHTML = '';
             elemento('acoes').innerHTML = '';
+            elemento('avisoAcoes').textContent = '';
             elemento('valorDealer').textContent = '0';
         }
 

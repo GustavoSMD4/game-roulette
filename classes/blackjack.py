@@ -265,8 +265,9 @@ class Blackjack:
         novaMao = self.__novaMao(indice, mao.getValorAposta())
         novaMao.addCard(mao.removerUltimaCarta())
 
-        posicao = next(i for i, hand in enumerate(self.__maos) if hand.getIndice() == mao.getIndice())
-        self.__maos.insert(posicao + 1, novaMao)
+        # A ordem das mãos é sempre a ordem de criação (índice crescente): assim a lista
+        # continua igual depois de recarregar do banco e a mão atual nunca "pula".
+        self.__maos.append(novaMao)
         self.__maoRepo.create(self.__idJogo, novaMao)
 
         self.__registrarAcao("dividir", "jogador", None, mao.getIndice())
@@ -408,18 +409,38 @@ class Blackjack:
         if mao is None:
             return acoes
 
+        saldo = self.__saldoDisponivel()
+        aposta = mao.getValorAposta()
+
         acoes.append({"codigo": 0, "nome": "parar", "descricao": "Parar"})
 
         if mao.getValorMao() < 21:
             acoes.append({"codigo": 1, "nome": "comprar", "descricao": "Comprar carta"})
 
             if len(mao.getCartas()) <= 2:
-                acoes.append({"codigo": 2, "nome": "dobrar", "descricao": "Dobrar"})
+                acoes.append(self.__acaoComSaldo(
+                    2, "dobrar", "Dobrar", saldo >= aposta,
+                    f"Dobrar exige mais R$ {aposta:.2f} de saldo"
+                ))
 
-        if self.verificarJogadorPodeDividir(mao) and self.__saldoDisponivel() >= mao.getValorAposta():
-            acoes.append({"codigo": 3, "nome": "dividir", "descricao": "Dividir"})
+        if self.verificarJogadorPodeDividir(mao):
+            acoes.append(self.__acaoComSaldo(
+                3, "dividir", "Dividir", saldo >= aposta,
+                f"Dividir exige mais R$ {aposta:.2f} de saldo"
+            ))
 
         return acoes
+
+    @staticmethod
+    def __acaoComSaldo(codigo: int, nome: str, descricao: str, habilitada: bool, motivo: str):
+        """Marca a ação como indisponível (com o motivo) em vez de simplesmente escondê-la."""
+        return {
+            "codigo": codigo,
+            "nome": nome,
+            "descricao": descricao,
+            "habilitada": habilitada,
+            "motivoIndisponivel": None if habilitada else f"Saldo insuficiente. {motivo}."
+        }
 
     def verificarJogadasJogador(self, mao: MaoBlackjack = None):
         return ", ".join(f"{acao['codigo']}: {acao['nome']}" for acao in self.getAcoesDisponiveis(mao))
@@ -445,6 +466,7 @@ class Blackjack:
                 "id": self.__dealer.getId(),
                 "nome": self.__dealer.getNomeJogador(),
                 "valorMao": self.__dealer.getValorMao(),
+                "valoresParciais": self.__dealer.getValoresParciais(),
                 "cartas": [c.getDict() for c in self.__dealer.getCards()]
             } if self.__dealer else None,
             "jogadores": [mao.getDict() for mao in self.__maos]
