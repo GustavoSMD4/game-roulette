@@ -4,22 +4,25 @@ from flask_limiter import Limiter
 from server.roulette.service.rouletteService import RouletteService
 
 class RouletteController:
-    def __init__(self, app: Flask, service: RouletteService, limiter: Limiter, logger: logging):
+    def __init__(self, app: Flask, limiter: Limiter = None, logger: logging = None):
         self.app = app
-        self.__service = service
         self.limiter = limiter
         self.logger = logger
         
     @classmethod
     def newController(cls, app, limiter = None, logger = None):
-        return cls(app, RouletteService.newService(), limiter, logger).routes()
+        return cls(app, limiter, logger).routes()
+
+    def __service(self):
+        # Um service por requisição: conexões/cursors do sqlite não são compartilháveis entre threads
+        return RouletteService.newService()
     
     def routes(self):
         @self.app.route("/roulette/play", methods=["POST"])
         @self.limiter.limit("20 per minute")
         def playRoulette():
             try:
-                textMensagemResultado = self.__service.play(request.json)
+                textMensagemResultado = self.__service().play(request.json)
                 return jsonify({"mensagem": textMensagemResultado}), 200
                 
             except Exception as e:
@@ -29,7 +32,7 @@ class RouletteController:
         @self.limiter.limit("10 per minute")
         def rouletteStats():
             try:
-                stats = self.__service.statsJogador(request.json)
+                stats = self.__service().statsJogador(request.json)
                 return jsonify({"body": {"stats": stats}})
                 
             except Exception as e:
@@ -39,7 +42,7 @@ class RouletteController:
         @self.limiter.limit("10 per minute")
         def rouletteStatsGerais():
             try:
-                stats = self.__service.stats()
+                stats = self.__service().stats()
                 return jsonify({"body": {"stats": stats}})
                 
             except Exception as e:
@@ -49,7 +52,7 @@ class RouletteController:
         @self.limiter.limit("10 per minute")
         def rouletteStatsDia():
             try:
-                stats = self.__service.statsPorDia()
+                stats = self.__service().statsPorDia()
                 return jsonify({"body": {"stats": stats}})
                 
             except Exception as e:

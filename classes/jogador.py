@@ -51,3 +51,6 @@ class Jogador:
 
     def addCard(self, carta):
         self.__cartas.append(carta)
+
+    def removerUltimaCarta(self):
+        return self.__cartas.pop() if self.__cartas else None

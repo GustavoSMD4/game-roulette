@@ -1,6 +1,7 @@
 import sqlite3
 from configs.configs import Configs
 from server.roulette.models.resultadoRoletaModel import ResultadoRoleta
+from utils import agoraBrasilia
 
 
 class ResultadoRoletaRepo:
@@ -31,8 +32,8 @@ class ResultadoRoletaRepo:
     def create(self, resultado: ResultadoRoleta):
         sql = """
             INSERT INTO RESULTADOS_ROLETA 
-            (ID_JOGADOR, APOSTA_JOGADOR, VALOR_APOSTA, RESULTADO, VALOR_RESULTADO, GANHOU)
-            VALUES (?, ?, ?, ?, ?, ?);
+            (ID_JOGADOR, APOSTA_JOGADOR, VALOR_APOSTA, RESULTADO, VALOR_RESULTADO, GANHOU, DATA_HORA)
+            VALUES (?, ?, ?, ?, ?, ?, ?);
         """
         dados = (
             resultado.getIdJogador(),
@@ -40,7 +41,8 @@ class ResultadoRoletaRepo:
             resultado.getValorAposta(),
             resultado.getResultado(),
             resultado.getValorResultado(),
-            resultado.getGanhou()
+            resultado.getGanhou(),
+            resultado.getDataHora() or agoraBrasilia()
         )
         self.__cursor.execute(sql, dados)
         self.__conn.commit()

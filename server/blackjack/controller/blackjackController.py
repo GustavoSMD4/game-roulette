@@ -5,21 +5,25 @@ from server.blackjack.service.blackjackService import BlackjackService
 
 
 class BlackjackController:
-    def __init__(self, app: Flask, repository: BlackjackRepo, service: BlackjackService):
+    def __init__(self, app: Flask):
         self.__app = app
-        self.__service = service
-        self.__repository = repository
         
     @classmethod
     def blackjackController(cls, app):
-        controller = cls(app, BlackjackRepo.newBlackjackRepo(), BlackjackService.blackjackService())
-        return controller.routes()
+        return cls(app).routes()
+
+    def __service(self):
+        # Um service por requisição: conexões/cursors do sqlite não são compartilháveis entre threads
+        return BlackjackService.blackjackService()
+
+    def __repository(self):
+        return BlackjackRepo.newBlackjackRepo()
     
     def routes(self):
         @self.__app.route("/blackjack", methods=["POST"])
         def blackjack():
             try:
-                dados = self.__repository.consultarJogo(request.json.get("idJogo"))
+                dados = self.__repository().consultarJogo(request.json.get("idJogo"))
                 
                 return jsonify({"body": {"jogo": dados}})
             except Exception as e:
@@ -28,7 +32,7 @@ class BlackjackController:
         @self.__app.route("/blackjack/create", methods=["POST"])
         def createJogo():
             try:
-                retorno = self.__service.createNovoJogoBlackjack(request.json)
+                retorno = self.__service().createNovoJogoBlackjack(request.json)
                 
                 return jsonify({"body": {"retorno": retorno}})
             except Exception as e:
@@ -37,7 +41,7 @@ class BlackjackController:
         @self.__app.route("/blackjack/restate", methods=["POST"])
         def restateJogo():
             try:
-                retorno = self.__service.restateJogoBlackjack(request.json)
+                retorno = self.__service().restateJogoBlackjack(request.json)
                 
                 return jsonify({"body": {"retorno": retorno}})
             except Exception as e:
@@ -46,7 +50,7 @@ class BlackjackController:
         @self.__app.route("/blackjack/jogar", methods=["POST"])
         def blackjackJogar():
             try:
-                retorno = self.__service.jogar(request.json)
+                retorno = self.__service().jogar(request.json)
                 
                 return jsonify({"body": {"retorno": retorno}})
             except Exception as e:

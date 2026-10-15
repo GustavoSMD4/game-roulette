@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criar Conta - Game Roulette</title>
+    <link rel="stylesheet" href="/front/static/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <h2>Criar conta</h2>
+
+        <form id="formConta">
+            <label for="usuario">Usuário</label>
+            <input type="text" id="usuario" autocomplete="username" required>
+
+            <label for="senha">Senha</label>
+            <input type="password" id="senha" autocomplete="new-password" required>
+
+            <label for="confirmacao">Confirmar senha</label>
+            <input type="password" id="confirmacao" autocomplete="new-password" required>
+
+            <button type="submit" class="largo">Criar conta</button>
+        </form>
+
+        <div id="mensagem" class="mensagem"></div>
+
+        <div class="links">
+            <a href="/front/login">Já tenho conta</a>
+        </div>
+    </div>
+
+    <script src="/front/static/app.js"></script>
+    <script>
+        document.getElementById('formConta').addEventListener('submit', async function (evento) {
+            evento.preventDefault();
+
+            const mensagem = document.getElementById('mensagem');
+            const senha = document.getElementById('senha').value;
+            const confirmacao = document.getElementById('confirmacao').value;
+
+            if (senha !== confirmacao) {
+                exibirMensagem(mensagem, 'As senhas não conferem', 'erro');
+                return;
+            }
+
+            exibirMensagem(mensagem, 'Criando conta...');
+
+            try {
+                const dados = await api('/front/api/criar-conta', 'POST', {
+                    usuario: document.getElementById('usuario').value.trim(),
+                    senha: senha
+                });
+
+                salvarUsuario(dados.usuario);
+                exibirMensagem(mensagem, 'Conta criada com sucesso!', 'sucesso');
+
+                setTimeout(() => window.location.href = '/front/conta', 700);
+            } catch (error) {
+                exibirMensagem(mensagem, error.message, 'erro');
+            }
+        });
+    </script>
+</body>
+
+</html>

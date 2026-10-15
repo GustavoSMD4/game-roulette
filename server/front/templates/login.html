@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Game Roulette</title>
+    <link rel="stylesheet" href="/front/static/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <h2>Entrar</h2>
+
+        <form id="formLogin">
+            <label for="usuario">Usuário</label>
+            <input type="text" id="usuario" autocomplete="username" required>
+
+            <label for="senha">Senha</label>
+            <input type="password" id="senha" autocomplete="current-password" required>
+
+            <button type="submit" class="largo">Entrar</button>
+        </form>
+
+        <div id="mensagem" class="mensagem"></div>
+
+        <div class="links">
+            <a href="/front/criar-conta">Criar conta</a>
+        </div>
+    </div>
+
+    <script src="/front/static/app.js"></script>
+    <script>
+        document.getElementById('formLogin').addEventListener('submit', async function (evento) {
+            evento.preventDefault();
+
+            const mensagem = document.getElementById('mensagem');
+            exibirMensagem(mensagem, 'Entrando...');
+
+            try {
+                const dados = await api('/front/api/login', 'POST', {
+                    usuario: document.getElementById('usuario').value.trim(),
+                    senha: document.getElementById('senha').value
+                });
+
+                salvarUsuario(dados.usuario);
+                window.location.href = '/front/conta';
+            } catch (error) {
+                exibirMensagem(mensagem, error.message, 'erro');
+            }
+        });
+    </script>
+</body>
+
+</html>

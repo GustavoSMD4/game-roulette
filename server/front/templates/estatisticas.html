@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estatísticas - Game Roulette</title>
+    <link rel="stylesheet" href="/front/static/style.css">
+</head>
+
+<body>
+    <div class="topo">
+        <h1>Estatísticas</h1>
+        <div>
+            <span id="nomeJogador">-</span> | <span class="saldo" id="saldoJogador">-</span>
+        </div>
+        <div class="acoes" style="margin: 0;">
+            <button class="secundario" onclick="window.location.href='/front/roleta'">Roleta</button>
+            <button class="secundario" onclick="window.location.href='/front/blackjack'">Blackjack</button>
+            <button class="secundario" onclick="window.location.href='/front/conta'">Minha conta</button>
+            <button class="secundario" onclick="sair()">Sair</button>
+        </div>
+    </div>
+
+    <div class="container largo">
+        <section class="card-stats destaque-servidor">
+            <h2>Geral do servidor</h2>
+            <p class="fonte">Todos os jogadores - roleta e blackjack juntos</p>
+            <div id="geralServidor"></div>
+        </section>
+
+        <section class="card-stats">
+            <h2>Minhas estatísticas</h2>
+            <p class="fonte">Roleta e blackjack juntos, e cada modalidade separada</p>
+
+            <div id="meuGeral" class="sub-card sub-card-geral"></div>
+
+            <div class="duas-colunas">
+                <div class="sub-card">
+                    <h3>Roleta</h3>
+                    <div id="minhaRoleta"></div>
+                </div>
+
+                <div class="sub-card">
+                    <h3>Blackjack</h3>
+                    <div id="meuBlackjack"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="card-stats">
+            <h2>Minhas mãos de blackjack</h2>
+            <p class="fonte">Últimas 20 mãos</p>
+            <div id="meuHistorico"></div>
+        </section>
+
+        <section class="card-stats">
+            <h2>Estatísticas gerais por modalidade</h2>
+            <p class="fonte">Todos os jogadores</p>
+
+            <div class="duas-colunas">
+                <div class="sub-card">
+                    <h3>Roleta</h3>
+                    <div id="roletaGeral"></div>
+                </div>
+
+                <div class="sub-card">
+                    <h3>Blackjack</h3>
+                    <div id="blackjackGeral"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="card-stats">
+            <h2>Jogadores</h2>
+            <p class="fonte">Total de cada jogador (roleta + blackjack) - clique para abrir o detalhe</p>
+            <div id="listaJogadores"></div>
+        </section>
+
+        <section class="card-stats" id="cardJogadorSelecionado" style="display: none;">
+            <div class="cabecalho-selecionado">
+                <div>
+                    <h2 id="tituloJogadorSelecionado">-</h2>
+                    <p class="fonte" id="fonteJogadorSelecionado"></p>
+                </div>
+                <button class="secundario" id="btnFecharSelecionado">Fechar</button>
+            </div>
+
+            <div id="selecionadoGeral" class="sub-card sub-card-geral"></div>
+
+            <div class="duas-colunas">
+                <div class="sub-card">
+                    <h3>Roleta</h3>
+                    <div id="selecionadoRoleta"></div>
+                </div>
+
+                <div class="sub-card">
+                    <h3>Blackjack</h3>
+                    <div id="selecionadoBlackjack"></div>
+                </div>
+            </div>
+
+            <div class="sub-card">
+                <h3>Mãos de blackjack</h3>
+                <div id="selecionadoHistorico"></div>
+            </div>
+        </section>
+
+        <section class="card-stats" id="cardReplay" style="display: none;">
+            <div class="cabecalho-selecionado">
+                <div>
+                    <h2 id="replayTitulo">Replay da mão</h2>
+                    <p class="fonte" id="replayResumo"></p>
+                </div>
+                <button class="secundario" id="btnFecharReplay">Fechar</button>
+            </div>
+
+            <div class="mesa">
+                <div class="mao">
+                    <h3>Dealer - <span class="valor" id="replayValorDealer">0</span></h3>
+                    <div class="cartas" id="replayCartasDealer"></div>
+                </div>
+
+                <div class="mao">
+                    <h3>Você - <span class="valor" id="replayValorJogador">0</span></h3>
+                    <div class="cartas" id="replayCartasJogador"></div>
+                </div>
+            </div>
+
+            <div class="controles-replay">
+                <button class="secundario" id="btnReplayAnterior">&#9664; Anterior</button>
+                <button id="btnReplayPlay">Reproduzir</button>
+                <button class="secundario" id="btnReplayProximo">Próximo &#9654;</button>
+                <span class="passo-info" id="replayPasso">Passo 0/0</span>
+            </div>
+
+            <div class="barra-replay"><span id="replayBarra"></span></div>
+
+            <p class="legenda-replay" id="replayLegenda">-</p>
+
+            <div class="replay-final" id="replayFinal" style="display: none;">
+                <div>
+                    <strong id="replayFinalTitulo"></strong>
+                    <span class="fonte" id="replayFinalPlacar"></span>
+                </div>
+                <span id="replayFinalLucro"></span>
+            </div>
+        </section>
+
+        <div id="mensagem" class="mensagem"></div>
+    </div>
+
+    <script src="/front/static/app.js"></script>
+    <script>
+        const usuario = exigirUsuario();
+
+        function elemento(id) {
+            return document.getElementById(id);
+        }
+
+        function item(rotulo, valor, classe) {
+            return '<div class="item-stats' + (classe ? ' ' + classe : '') + '">' +
+                '<span class="rotulo">' + rotulo + '</span>' +
+                '<strong>' + valor + '</strong></div>';
+        }
+
+        function grupo(titulo, itens) {
+            return '<div class="grupo-stats"><h4>' + titulo + '</h4>' +
+                '<div class="grade-stats">' + itens + '</div></div>';
+        }
+
+        function classeLucro(valor) {
+            return valor > 0 ? 'positivo' : (valor < 0 ? 'negativo' : 'neutro');
+        }
+
+        function comSinal(valor) {
+            return (valor > 0 ? '+' : '') + formatarReal(valor);
+        }
+
+        function formatarData(dataHora) {
+            return String(dataHora || '').slice(0, 16);
+        }
+
+        // Resumo que junta roleta + blackjack
+        function htmlGeral(geral, roleta, blackjack) {
+            if (!geral || !geral.possuiJogos) {
+                return '<p class="aviso">Nenhum jogo registrado ainda.</p>';
+            }
+
+            const jogosRoleta = roleta ? (roleta.totalJogos || 0) : 0;
+            const lucroRoleta = roleta ? (roleta.lucroTotal || 0) : 0;
+            const maosBlackjack = blackjack ? (blackjack.totalJogos || 0) : 0;
+            const lucroBlackjack = blackjack ? (blackjack.lucroTotal || 0) : 0;
+
+            return grupo('Desempenho (roleta + blackjack)',
+                item('Jogos', geral.jogos) +
+                item('Vitórias', geral.vitorias) +
+                item('Derrotas', geral.derrotas) +
+                item('Empates', geral.empates) +
+                item('Taxa de vitória', geral.taxaVitoria + '%', 'destaque')
+            ) + grupo('Dinheiro (total)',
+                item('Total apostado', formatarReal(geral.totalApostado), 'destaque') +
+                item('Lucro total', comSinal(geral.lucroTotal), 'destaque ' + classeLucro(geral.lucroTotal)) +
+                item('Aposta média', formatarReal(geral.apostaMedia))
+            ) + grupo('Por modalidade',
+                item('Roleta: jogos', jogosRoleta) +
+                item('Roleta: lucro', comSinal(lucroRoleta), classeLucro(lucroRoleta)) +
+                item('Blackjack: mãos', maosBlackjack) +
+                item('Blackjack: lucro', comSinal(lucroBlackjack), classeLucro(lucroBlackjack))
+            );
+        }
+
+        function htmlBlackjack(stats) {
+            if (!stats || !stats.possuiJogos) {
+                return '<p class="aviso">Nenhuma mão de blackjack registrada ainda.</p>';
+            }
+
+            return grupo('Desempenho',
+                item('Mãos', stats.totalJogos) +
+                item('Vitórias', stats.vitorias) +
+                item('Derrotas', stats.derrotas) +
+                item('Empates', stats.empates) +
+                item('Taxa de vitória', stats.winRate + '%', 'destaque')
+            ) + grupo('Dinheiro',
+                item('Total apostado', formatarReal(stats.totalApostado)) +
+                item('Aposta média', formatarReal(stats.apostaMedia)) +
+                item('Lucro', comSinal(stats.lucroTotal), 'destaque ' + classeLucro(stats.lucroTotal)) +
+                item('Maior ganho', formatarReal(stats.maiorGanho)) +
+                item('Maior perda', formatarReal(stats.maiorPerda))
+            );
+        }
+
+        function htmlRoleta(stats) {
+            if (!stats || !stats.possuiJogos) {
+                return '<p class="aviso">Nenhum jogo de roleta registrado ainda.</p>';
+            }
+
+            return grupo('Desempenho',
+                item('Jogos', stats.totalJogos) +
+                item('Vitórias', stats.vitorias) +
+                item('Derrotas', stats.derrotas) +
+                item('Taxa de vitória', stats.winRate + '%', 'destaque')
+            ) + grupo('Dinheiro',
+                item('Total apostado', formatarReal(stats.totalApostado)) +
+                item('Lucro', comSinal(stats.lucroTotal), 'destaque ' + classeLucro(stats.lucroTotal))
+            ) + grupo('Onde aposta',
+                item('Red', stats.apostasRed) +
+                item('Black', stats.apostasBlack) +
+                item('Números', stats.apostasNumero) +
+                item('Preferida', stats.apostaPreferida)
+            );
+        }
+
+        function htmlHistorico(maos) {
+            if (!maos || maos.length === 0) {
+                return '<p class="aviso">Nenhuma mão registrada ainda.</p>';
+            }
+
+            const linhas = maos.map(mao =>
+                '<tr>' +
+                '<td>' + formatarData(mao.dataHora) + '</td>' +
+                '<td>' + formatarReal(mao.valorAposta) + '</td>' +
+                '<td>' + mao.valorJogador + ' x ' + mao.valorDealer + '</td>' +
+                '<td>' + (mao.indiceMao > 0 ? '<strong>Mão ' + (mao.indiceMao + 1) + '</strong> - ' : '') + (mao.titulo || mao.resultado || '-') + '</td>' +
+                '<td class="' + classeLucro(mao.lucro) + '">' + comSinal(mao.lucro) + '</td>' +
+                '<td>' + (mao.idJogo
+                    ? '<button class="secundario" data-replay="' + mao.idJogo + '" data-indice="' + (mao.indiceMao || 0) + '">Ver replay</button>'
+                    : '<span class="aviso">-</span>') + '</td>' +
+                '</tr>'
+            ).join('');
+
+            return '<table class="tabela-historico"><thead><tr>' +
+                '<th>Data</th><th>Aposta</th><th>Você x Dealer</th><th>Resultado</th><th>Lucro</th><th></th>' +
+                '</tr></thead><tbody>' + linhas + '</tbody></table>';
+        }
+
+        function htmlListaJogadores(jogadores) {
+            if (!jogadores || jogadores.length === 0) {
+                return '<p class="aviso">Nenhum jogador cadastrado.</p>';
+            }
+
+            const eu = String(usuario.id);
+
+            const linhas = jogadores.map(jogador =>
+                '<tr class="linha-clicavel" data-id="' + jogador.id + '">' +
+                '<td>' + jogador.usuario + (jogador.id === eu ? ' <span class="tag-voce">você</span>' : '') + '</td>' +
+                '<td>' + formatarReal(jogador.saldo) + '</td>' +
+                '<td><strong>' + jogador.geral.jogos + '</strong> jogos</td>' +
+                '<td>' + formatarReal(jogador.geral.totalApostado) + '</td>' +
+                '<td class="' + classeLucro(jogador.geral.lucroTotal) + '">' + comSinal(jogador.geral.lucroTotal) + '</td>' +
+                '<td>' + jogador.roleta.jogos + ' (' + comSinal(jogador.roleta.lucro) + ')</td>' +
+                '<td>' + jogador.blackjack.maos + ' (' + comSinal(jogador.blackjack.lucro) + ')</td>' +
+                '<td><button class="secundario" data-id="' + jogador.id + '">Ver</button></td>' +
+                '</tr>'
+            ).join('');
+
+            return '<table class="tabela-historico"><thead><tr>' +
+                '<th>Jogador</th><th>Saldo</th><th>Total</th><th>Apostado</th><th>Lucro total</th>' +
+                '<th>Roleta (lucro)</th><th>Blackjack (lucro)</th><th></th>' +
+                '</tr></thead><tbody>' + linhas + '</tbody></table>';
+        }
+
+        async function carregarSaldo() {
+            try {
+                const dados = await api('/front/api/conta?idUsuario=' + encodeURIComponent(usuario.id), 'GET');
+                salvarUsuario(dados.usuario);
+                elemento('nomeJogador').textContent = dados.usuario.usuario;
+                elemento('saldoJogador').textContent = formatarReal(dados.usuario.saldo);
+            } catch (error) {
+                if (tratarSessaoInvalida(error)) return;
+                exibirMensagem(elemento('mensagem'), error.message, 'erro');
+            }
+        }
+
+        async function carregarJogadores() {
+            try {
+                const dados = await api('/front/api/jogadores', 'GET');
+
+                elemento('geralServidor').innerHTML = htmlGeral(dados.geral.geral, dados.geral.roleta, dados.geral.blackjack);
+                elemento('roletaGeral').innerHTML = htmlRoleta(dados.geral.roleta);
+                elemento('blackjackGeral').innerHTML = htmlBlackjack(dados.geral.blackjack);
+                elemento('listaJogadores').innerHTML = htmlListaJogadores(dados.jogadores);
+            } catch (error) {
+                exibirMensagem(elemento('mensagem'), error.message, 'erro');
+            }
+        }
+
+        async function carregarMinhasStats() {
+            try {
+                const dados = await api('/front/api/jogadores/estatisticas', 'POST', { idUsuario: usuario.id });
+
+                elemento('meuGeral').innerHTML = htmlGeral(dados.geral, dados.roleta, dados.blackjack.stats);
+                elemento('minhaRoleta').innerHTML = htmlRoleta(dados.roleta);
+                elemento('meuBlackjack').innerHTML = htmlBlackjack(dados.blackjack.stats);
+                elemento('meuHistorico').innerHTML = htmlHistorico(dados.blackjack.historico);
+            } catch (error) {
+                if (tratarSessaoInvalida(error)) return;
+                exibirMensagem(elemento('mensagem'), error.message, 'erro');
+            }
+        }
+
+        async function verJogador(id) {
+            const mensagem = elemento('mensagem');
+
+            try {
+                const dados = await api('/front/api/jogadores/estatisticas', 'POST', { idUsuario: id });
+
+                elemento('tituloJogadorSelecionado').textContent = dados.jogador.usuario;
+                elemento('fonteJogadorSelecionado').textContent = 'Saldo: ' + formatarReal(dados.jogador.saldo);
+                elemento('selecionadoGeral').innerHTML = htmlGeral(dados.geral, dados.roleta, dados.blackjack.stats);
+                elemento('selecionadoRoleta').innerHTML = htmlRoleta(dados.roleta);
+                elemento('selecionadoBlackjack').innerHTML = htmlBlackjack(dados.blackjack.stats);
+                elemento('selecionadoHistorico').innerHTML = htmlHistorico(dados.blackjack.historico);
+                elemento('cardJogadorSelecionado').style.display = 'block';
+                elemento('cardJogadorSelecionado').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                exibirMensagem(mensagem, '');
+            } catch (error) {
+                if (tratarSessaoInvalida(error)) return;
+                exibirMensagem(mensagem, error.message, 'erro');
+            }
+        }
+
+        const MARCAS_REPLAY = {
+            inicio: 'Carta inicial',
+            comprar: 'Comprou carta',
+            dobrar: 'Dobrou a aposta',
+            dividir: 'Dividiu a mão',
+            parar: 'Parou',
+            dealer: 'Dealer comprou'
+        };
+
+        let replayAtual = null;
+        let passoReplay = -1;
+        let timerReplay = null;
+
+        function nomeCarta(arquivo) {
+            return String(arquivo || '').replace('.png', '').replace(/_/g, ' ');
+        }
+
+        function descricaoPasso(acao) {
+            const marca = MARCAS_REPLAY[acao.acao] || acao.acao;
+
+            if (acao.acao === 'inicio') {
+                return marca + ' (' + (acao.dono === 'dealer' ? 'dealer' : 'você') + ')';
+            }
+
+            return marca;
+        }
+
+        function sincronizarCartasReplay(elementoCartas, cartas) {
+            while (elementoCartas.children.length > cartas.length) {
+                elementoCartas.removeChild(elementoCartas.lastChild);
+            }
+
+            for (let i = elementoCartas.children.length; i < cartas.length; i++) {
+                const img = document.createElement('img');
+                img.src = '/assets/' + encodeURIComponent(cartas[i].carta);
+                img.alt = nomeCarta(cartas[i].carta);
+                img.title = img.alt;
+                elementoCartas.appendChild(img);
+            }
+        }
+
+        function pararReproducao() {
+            clearInterval(timerReplay);
+            timerReplay = null;
+            elemento('btnReplayPlay').textContent = 'Reproduzir';
+        }
+
+        function renderReplay(indice) {
+            if (!replayAtual) {
+                return;
+            }
+
+            const acoes = replayAtual.acoes;
+            const visiveis = indice < 0 ? [] : acoes.slice(0, indice + 1);
+            const ultimo = visiveis[visiveis.length - 1];
+
+            sincronizarCartasReplay(elemento('replayCartasJogador'), visiveis.filter(a => a.carta && a.dono !== 'dealer'));
+            sincronizarCartasReplay(elemento('replayCartasDealer'), visiveis.filter(a => a.carta && a.dono === 'dealer'));
+
+            elemento('replayValorJogador').textContent = ultimo ? ultimo.valorJogador : 0;
+            elemento('replayValorDealer').textContent = ultimo ? ultimo.valorDealer : 0;
+
+            const total = acoes.length;
+            elemento('replayPasso').textContent = 'Passo ' + (indice + 1) + '/' + total;
+            elemento('replayBarra').style.width = (total > 0 ? ((indice + 1) / total) * 100 : 0) + '%';
+            elemento('replayLegenda').textContent = ultimo ? descricaoPasso(ultimo) : 'Início da mão';
+
+            const terminou = indice >= total - 1;
+            elemento('btnReplayAnterior').disabled = indice < 0;
+            elemento('btnReplayProximo').disabled = terminou;
+            elemento('replayFinal').style.display = terminou ? 'flex' : 'none';
+
+            if (terminou) {
+                pararReproducao();
+            }
+        }
+
+        function avancarReplay() {
+            passoReplay++;
+            renderReplay(passoReplay);
+
+            if (passoReplay >= replayAtual.acoes.length - 1) {
+                pararReproducao();
+            }
+        }
+
+        function alternarReproducao() {
+            if (timerReplay) {
+                pararReproducao();
+                return;
+            }
+
+            if (!replayAtual || replayAtual.acoes.length === 0) {
+                return;
+            }
+
+            if (passoReplay >= replayAtual.acoes.length - 1) {
+                passoReplay = -1;
+                renderReplay(passoReplay);
+            }
+
+            elemento('btnReplayPlay').textContent = 'Pausar';
+            timerReplay = setInterval(avancarReplay, 900);
+        }
+
+        async function verReplay(idJogo, indiceMao) {
+            const mensagem = elemento('mensagem');
+            pararReproducao();
+
+            try {
+                const dados = await api('/front/api/blackjack/replay', 'POST', { idJogo: idJogo, indiceMao: indiceMao });
+                replayAtual = dados;
+
+                const nomeMao = dados.resultado.indiceMao > 0 ? 'Mão ' + (dados.resultado.indiceMao + 1) + ' - ' : '';
+
+                elemento('replayTitulo').textContent = nomeMao + (dados.resultado.titulo || 'Mão') + ' - ' + formatarData(dados.resultado.dataHora);
+                elemento('replayResumo').textContent =
+                    'Aposta ' + formatarReal(dados.resultado.valorAposta) +
+                    ' | Você ' + dados.resultado.valorJogador + ' x Dealer ' + dados.resultado.valorDealer +
+                    ' | Lucro ' + comSinal(dados.resultado.lucro);
+
+                elemento('replayFinal').className = 'replay-final ' + (dados.resultado.situacao || '');
+                elemento('replayFinalTitulo').textContent = dados.resultado.titulo || 'Resultado';
+                elemento('replayFinalPlacar').textContent = dados.resultado.descricao || '';
+                elemento('replayFinalLucro').textContent = comSinal(dados.resultado.lucro);
+                elemento('replayFinalLucro').className = classeLucro(dados.resultado.lucro);
+
+                elemento('cardReplay').style.display = 'block';
+                elemento('cardReplay').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                passoReplay = -1;
+                renderReplay(passoReplay);
+
+                if (dados.acoes.length > 0) {
+                    alternarReproducao();
+                }
+
+                exibirMensagem(mensagem, '');
+            } catch (error) {
+                exibirMensagem(mensagem, error.message, 'erro');
+            }
+        }
+
+        elemento('listaJogadores').addEventListener('click', function (evento) {
+            const alvo = evento.target.closest('[data-id]');
+
+            if (alvo) {
+                verJogador(alvo.getAttribute('data-id'));
+            }
+        });
+
+        document.addEventListener('click', function (evento) {
+            const alvo = evento.target.closest('[data-replay]');
+
+            if (alvo) {
+                verReplay(alvo.getAttribute('data-replay'), alvo.getAttribute('data-indice') || 0);
+            }
+        });
+
+        elemento('btnFecharSelecionado').addEventListener('click', function () {
+            elemento('cardJogadorSelecionado').style.display = 'none';
+        });
+
+        elemento('btnFecharReplay').addEventListener('click', function () {
+            pararReproducao();
+            elemento('cardReplay').style.display = 'none';
+        });
+
+        elemento('btnReplayPlay').addEventListener('click', alternarReproducao);
+
+        elemento('btnReplayProximo').addEventListener('click', function () {
+            pararReproducao();
+
+            if (replayAtual && passoReplay < replayAtual.acoes.length - 1) {
+                passoReplay++;
+                renderReplay(passoReplay);
+            }
+        });
+
+        elemento('btnReplayAnterior').addEventListener('click', function () {
+            pararReproducao();
+
+            if (passoReplay > -1) {
+                passoReplay--;
+                renderReplay(passoReplay);
+            }
+        });
+
+        if (usuario) {
+            elemento('nomeJogador').textContent = usuario.usuario;
+            elemento('saldoJogador').textContent = formatarReal(usuario.saldo);
+            carregarSaldo();
+            carregarJogadores();
+            carregarMinhasStats();
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blackjack - Game Roulette</title>
+    <link rel="stylesheet" href="/front/static/style.css">
+</head>
+
+<body>
+    <div class="topo">
+        <h1>Blackjack</h1>
+        <div>
+            <span id="nomeJogador">-</span> | <span class="saldo" id="saldoJogador">-</span>
+        </div>
+        <div class="acoes" style="margin: 0;">
+            <button class="secundario" onclick="window.location.href='/front/roleta'">Roleta</button>
+            <button class="secundario" onclick="window.location.href='/front/estatisticas'">Estatísticas</button>
+            <button class="secundario" onclick="window.location.href='/front/conta'">Minha conta</button>
+            <button class="secundario" onclick="sair()">Sair</button>
+        </div>
+    </div>
+
+    <div class="container largo">
+        <div id="painelResultado" class="painel-resultado" style="display: none;">
+            <div class="resumo">
+                <h2 id="resultadoTitulo"></h2>
+                <span class="descricao" id="resultadoDescricao"></span>
+            </div>
+
+            <div id="resultadoMaos" class="resultado-maos"></div>
+
+            <div class="dados">
+                <span>Aposta total <strong id="resultadoAposta">-</strong></span>
+                <span class="lucro" id="resultadoLucro"></span>
+                <span class="saldo-atual" id="resultadoSaldo"></span>
+            </div>
+
+            <button id="btnConfirmarResultado">Confirmar</button>
+        </div>
+
+        <div class="mesa">
+            <div class="mao">
+                <h3>Dealer - <span class="valor" id="valorDealer">0</span></h3>
+                <div class="cartas" id="cartasDealer"></div>
+            </div>
+
+            <div id="maosJogador"></div>
+        </div>
+
+        <div class="painel-aposta">
+            <label for="valorAposta">Valor da aposta (R$)</label>
+            <input type="number" id="valorAposta" min="1" step="0.01" value="10">
+            <span>Em jogo: <span class="aposta" id="apostaRodada">R$ 0,00</span></span>
+        </div>
+
+        <div id="semJogo">
+            <p>Nenhuma rodada em andamento.</p>
+            <button id="btnIniciar">Iniciar rodada</button>
+        </div>
+
+        <div id="jogo" style="display: none;">
+            <div class="acoes" id="acoes"></div>
+        </div>
+
+        <div id="mensagem" class="mensagem"></div>
+    </div>
+
+    <script src="/front/static/app.js"></script>
+    <script>
+        const usuario = exigirUsuario();
+
+        const ATRASO_CARTA = 220;
+        const ATRASO_DEALER = 420;
+        const DURACAO_CARTA = 320;
+
+        let timerResultado = null;
+
+        function elemento(id) {
+            return document.getElementById(id);
+        }
+
+        function criarImagemCarta(carta) {
+            const img = document.createElement('img');
+            img.src = '/assets/' + encodeURIComponent(carta.nomeImagem);
+            img.alt = carta.rank + ' de ' + carta.suit;
+            img.title = img.alt;
+            img.dataset.carta = String(carta.id);
+            return img;
+        }
+
+        // Reconcilia a mão posição por posição: só cartas diferentes da tela entram animadas
+        function sincronizarCartas(elementoCartas, cartas, atrasoMs) {
+            const lista = cartas || [];
+
+            lista.forEach((carta, indice) => {
+                const atual = elementoCartas.children[indice];
+
+                if (atual && atual.dataset.carta === String(carta.id)) {
+                    return;
+                }
+
+                const img = criarImagemCarta(carta);
+                img.style.animationDelay = (indice * atrasoMs) + 'ms';
+
+                if (atual) {
+                    elementoCartas.replaceChild(img, atual);
+                } else {
+                    elementoCartas.appendChild(img);
+                }
+            });
+
+            while (elementoCartas.children.length > lista.length) {
+                elementoCartas.removeChild(elementoCartas.lastChild);
+            }
+
+            return Math.max(lista.length - 1, 0) * atrasoMs + DURACAO_CARTA;
+        }
+
+        function criarBlocoMao(mao) {
+            const bloco = document.createElement('div');
+            bloco.className = 'mao';
+            bloco.dataset.indice = mao.indice;
+            bloco.innerHTML =
+                '<h3>' + mao.nome + ' - <span class="valor">' + mao.valorMao + '</span>' +
+                ' <span class="aposta-mao">R$ ' + Number(mao.valorAposta || 0).toFixed(2) + '</span></h3>' +
+                '<div class="cartas"></div>';
+
+            return bloco;
+        }
+
+        function renderizarMaosJogador(estado) {
+            const container = elemento('maosJogador');
+            const maos = estado.maos || [];
+            const composicaoMudou = container.children.length !== maos.length ||
+                maos.some((mao, indice) => !container.children[indice] ||
+                    Number(container.children[indice].dataset.indice) !== mao.indice);
+
+            if (composicaoMudou) {
+                container.innerHTML = '';
+                maos.forEach(mao => container.appendChild(criarBlocoMao(mao)));
+            }
+
+            let tempo = 0;
+
+            maos.forEach((mao, indice) => {
+                const bloco = container.children[indice];
+                const atual = mao.indice === estado.idMaoAtual && !estado.finalizado;
+
+                bloco.className = 'mao' + (atual ? ' atual' : '') + (mao.encerrada ? ' encerrada' : '');
+                bloco.querySelector('.valor').textContent = mao.valorMao;
+                bloco.querySelector('.aposta-mao').textContent = 'R$ ' + Number(mao.valorAposta || 0).toFixed(2);
+
+                tempo = Math.max(tempo, sincronizarCartas(bloco.querySelector('.cartas'), mao.cartas, ATRASO_CARTA));
+            });
+
+            return tempo;
+        }
+
+        function renderizarAcoes(acoes, finalizado) {
+            const container = elemento('acoes');
+            container.innerHTML = '';
+
+            if (finalizado) {
+                return;
+            }
+
+            (acoes || []).forEach(acao => {
+                const botao = document.createElement('button');
+                botao.textContent = acao.descricao || acao.nome;
+                botao.addEventListener('click', () => jogar(acao.codigo));
+                container.appendChild(botao);
+            });
+        }
+
+        function atualizarSaldo(saldo) {
+            elemento('saldoJogador').textContent = formatarReal(saldo);
+
+            const dados = obterUsuario();
+
+            if (dados) {
+                dados.saldo = saldo;
+                salvarUsuario(dados);
+            }
+        }
+
+        function linhaResultadoMao(resultado, total) {
+            const classe = resultado.lucro > 0 ? 'positivo' : (resultado.lucro < 0 ? 'negativo' : 'neutro');
+            const nome = total > 1 ? (resultado.nomeMao || 'Mão ' + (resultado.indiceMao + 1)) : null;
+
+            return '<div class="linha-mao ' + classe + '">' +
+                (nome ? '<span class="nome-mao">' + nome + '</span>' : '') +
+                '<span class="placar">Você ' + resultado.valorJogador + ' x Dealer ' + resultado.valorDealer + '</span>' +
+                '<span class="titulo-mao">' + (resultado.titulo || '') + '</span>' +
+                '<span class="lucro-mao">' + (resultado.lucro > 0 ? '+' : '') + formatarReal(resultado.lucro) + '</span>' +
+                '</div>';
+        }
+
+        function mostrarResultado(resultados, financeiro) {
+            const lista = resultados || [];
+            const total = lista.length;
+
+            elemento('painelResultado').className = 'painel-resultado ' + (lista[0] ? (lista[0].situacao || '') : '');
+            elemento('resultadoTitulo').textContent = total === 1
+                ? (lista[0].titulo || 'Resultado')
+                : 'Rodada finalizada - ' + total + ' mãos';
+            elemento('resultadoDescricao').textContent = total === 1
+                ? (lista[0].descricao || '')
+                : 'As mãos foram pagas separadamente.';
+
+            elemento('resultadoMaos').innerHTML = total > 1
+                ? lista.map(resultado => linhaResultadoMao(resultado, total)).join('')
+                : '';
+
+            elemento('resultadoAposta').textContent = formatarReal(financeiro ? financeiro.aposta : 0);
+
+            if (financeiro) {
+                const classe = financeiro.lucro > 0 ? 'positivo' : (financeiro.lucro < 0 ? 'negativo' : 'neutro');
+                elemento('resultadoLucro').className = 'lucro ' + classe;
+                elemento('resultadoLucro').textContent = financeiro.lucro > 0
+                    ? 'Você ganhou ' + formatarReal(financeiro.lucro)
+                    : (financeiro.lucro < 0 ? 'Você perdeu ' + formatarReal(Math.abs(financeiro.lucro)) : 'Empate');
+                elemento('resultadoSaldo').textContent = 'Saldo: ' + formatarReal(financeiro.saldo);
+            }
+
+            elemento('painelResultado').style.display = 'flex';
+        }
+
+        function esconderResultado() {
+            elemento('painelResultado').style.display = 'none';
+        }
+
+        function renderizar(estado) {
+            elemento('semJogo').style.display = estado.ativo ? 'none' : 'block';
+            elemento('jogo').style.display = estado.ativo ? 'block' : 'none';
+            elemento('valorAposta').disabled = Boolean(estado.ativo && !estado.finalizado);
+            elemento('apostaRodada').textContent = formatarReal(estado.aposta || 0);
+
+            if (!estado.ativo) {
+                limpar();
+                return;
+            }
+
+            const finalizado = Boolean(estado.finalizado);
+            const cartasDealer = estado.dealer ? estado.dealer.cartas : [];
+
+            elemento('valorDealer').textContent = estado.dealer ? estado.dealer.valorMao : 0;
+
+            const tempoJogador = renderizarMaosJogador(estado);
+            const tempoDealer = sincronizarCartas(elemento('cartasDealer'), cartasDealer, finalizado ? ATRASO_DEALER : ATRASO_CARTA);
+
+            renderizarAcoes(estado.acoes, finalizado);
+
+            if (estado.financeiro) {
+                atualizarSaldo(estado.financeiro.saldo);
+            }
+
+            clearTimeout(timerResultado);
+            esconderResultado();
+
+            if (finalizado && estado.resultados && estado.resultados.length > 0) {
+                timerResultado = setTimeout(
+                    () => mostrarResultado(estado.resultados, estado.financeiro),
+                    Math.max(tempoJogador, tempoDealer)
+                );
+            }
+        }
+
+        function limpar() {
+            clearTimeout(timerResultado);
+            esconderResultado();
+
+            elemento('cartasDealer').innerHTML = '';
+            elemento('maosJogador').innerHTML = '';
+            elemento('acoes').innerHTML = '';
+            elemento('valorDealer').textContent = '0';
+        }
+
+        function confirmarResultado() {
+            esconderResultado();
+            carregarEstado();
+        }
+
+        async function carregarSaldo() {
+            try {
+                const dados = await api('/front/api/conta?idUsuario=' + encodeURIComponent(usuario.id), 'GET');
+                salvarUsuario(dados.usuario);
+                elemento('nomeJogador').textContent = dados.usuario.usuario;
+                atualizarSaldo(dados.usuario.saldo);
+            } catch (error) {
+                if (tratarSessaoInvalida(error)) return;
+                exibirMensagem(elemento('mensagem'), error.message, 'erro');
+            }
+        }
+
+        async function carregarEstado() {
+            const mensagem = elemento('mensagem');
+
+            try {
+                const estado = await api('/front/api/blackjack/estado', 'POST', { idUsuario: usuario.id });
+                exibirMensagem(mensagem, '');
+                renderizar(estado);
+            } catch (error) {
+                if (tratarSessaoInvalida(error)) return;
+                exibirMensagem(mensagem, error.message, 'erro');
+            }
+        }
+
+        async function iniciar() {
+            const mensagem = elemento('mensagem');
+            exibirMensagem(mensagem, 'Iniciando rodada...');
+            limpar();
+
+            try {
+                const estado = await api('/front/api/blackjack/iniciar', 'POST', {
+                    idUsuario: usuario.id,
+                    valorAposta: elemento('valorAposta').value
+                });
+                exibirMensagem(mensagem, '');
+                renderizar(estado);
+            } catch (error) {
+                exibirMensagem(mensagem, error.message, 'erro');
+                await carregarEstado();
+            }
+        }
+
+        async function jogar(codigo) {
+            const mensagem = elemento('mensagem');
+            exibirMensagem(mensagem, 'Jogando...');
+
+            try {
+                const estado = await api('/front/api/blackjack/jogar', 'POST', {
+                    idUsuario: usuario.id,
+                    jogada: codigo
+                });
+                exibirMensagem(mensagem, '');
+                renderizar(estado);
+            } catch (error) {
+                exibirMensagem(mensagem, error.message, 'erro');
+            }
+        }
+
+        elemento('btnIniciar').addEventListener('click', iniciar);
+        elemento('btnConfirmarResultado').addEventListener('click', confirmarResultado);
+
+        if (usuario) {
+            elemento('nomeJogador').textContent = usuario.usuario;
+            atualizarSaldo(usuario.saldo);
+            carregarSaldo();
+            carregarEstado();
+        }
+    </script>
+</body>
+
+</html>

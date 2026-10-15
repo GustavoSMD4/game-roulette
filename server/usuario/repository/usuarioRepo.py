@@ -1,4 +1,5 @@
 import sqlite3
+import uuid
 from configs.configs import Configs
 
 from server.usuario.model.usuario import Usuario
@@ -28,6 +29,10 @@ class UsuarioRepo:
     def consultarPorUsuario(self, usuario: str):
         self.__cursor.execute("SELECT * FROM USUARIOS WHERE USUARIO = ?", (usuario, ))
         dados = self.__formatar()
+        
+        if len(dados) <= 0:
+            return
+        
         return Usuario.newUsuario(dados[0])
     
     def login(self, usuario, senha):
@@ -44,6 +49,13 @@ class UsuarioRepo:
         self.__conn.commit()
         return self.consultarTodos()
     
+    def criarDealer(self):
+        """Cria o usuário dealer. Usado para repor a base quando ele não existe."""
+        self.__cursor.execute("INSERT INTO USUARIOS (ID, USUARIO, SENHA, SALDO) VALUES(?, ?, ?, 0)",
+                              (None, "dealer", str(uuid.uuid4())))
+        self.__conn.commit()
+        return self.consultarPorUsuario("dealer")
+
     def update(self, usuarioUpdate: Usuario):
         usuario = self.consultaPorId(usuarioUpdate.getId())
         

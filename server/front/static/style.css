@@ -1,0 +1,768 @@
+:root {
+    --azul: #007bff;
+    --azul-escuro: #0056b3;
+    --verde: #1f8a4c;
+    --vermelho: #c0392b;
+    --cinza: #f4f4f4;
+    --borda: #ccc;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: var(--cinza);
+    color: #333;
+    margin: 0;
+    padding: 24px;
+}
+
+a {
+    color: var(--azul);
+}
+
+.topo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    background: #fff;
+    border: 1px solid var(--borda);
+    border-radius: 5px;
+    padding: 12px 20px;
+    margin-bottom: 20px;
+}
+
+.topo h1 {
+    font-size: 20px;
+    margin: 0;
+}
+
+.topo .saldo {
+    font-size: 16px;
+    color: var(--verde);
+    font-weight: bold;
+}
+
+.container {
+    background: #fff;
+    border: 1px solid var(--borda);
+    border-radius: 5px;
+    padding: 30px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+}
+
+.container.largo {
+    max-width: 900px;
+}
+
+h2 {
+    margin-top: 0;
+}
+
+label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: bold;
+}
+
+input,
+select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 14px;
+    border: 1px solid var(--borda);
+    border-radius: 4px;
+}
+
+button {
+    background-color: var(--azul);
+    color: #fff;
+    border: none;
+    padding: 10px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover:enabled {
+    background-color: var(--azul-escuro);
+}
+
+button:disabled {
+    background-color: #b5b5b5;
+    cursor: not-allowed;
+}
+
+button.largo {
+    width: 100%;
+}
+
+button.secundario {
+    background-color: #6c757d;
+}
+
+button.perigo {
+    background-color: var(--vermelho);
+}
+
+.acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.mensagem {
+    margin-top: 16px;
+    text-align: center;
+    min-height: 22px;
+}
+
+.mensagem.erro {
+    color: var(--vermelho);
+}
+
+.mensagem.sucesso {
+    color: var(--verde);
+}
+
+.links {
+    margin-top: 18px;
+    text-align: center;
+}
+
+.mesa {
+    background-color: #086430;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 18px;
+}
+
+.mao {
+    margin-bottom: 16px;
+}
+
+.mao h3 {
+    color: #fff;
+    margin: 0 0 8px;
+    font-size: 16px;
+}
+
+.mao .valor {
+    color: #ffd54f;
+    font-weight: bold;
+}
+
+.mao .aposta-mao {
+    color: #cfe8d8;
+    font-size: 13px;
+    font-weight: normal;
+}
+
+.mao.atual {
+    border-left: 4px solid #ffd54f;
+    padding-left: 10px;
+    margin-left: -14px;
+}
+
+.mao.encerrada {
+    opacity: 0.6;
+}
+
+.resultado-maos {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+}
+
+.linha-mao {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 14px;
+    color: #555;
+}
+
+.linha-mao .nome-mao {
+    font-weight: bold;
+    min-width: 90px;
+}
+
+.linha-mao .placar {
+    color: #666;
+}
+
+.linha-mao .titulo-mao {
+    flex: 1;
+}
+
+.linha-mao .lucro-mao {
+    font-weight: bold;
+}
+
+.linha-mao.positivo .lucro-mao {
+    color: var(--verde);
+}
+
+.linha-mao.negativo .lucro-mao {
+    color: var(--vermelho);
+}
+
+.cartas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 110px;
+}
+
+.cartas img {
+    width: 74px;
+    height: auto;
+    background-color: #fff;
+    border-radius: 5px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    animation: entrarCarta 320ms ease-out backwards;
+}
+
+@keyframes entrarCarta {
+    from {
+        opacity: 0;
+        transform: translate(-70px, -50px) rotate(-14deg) scale(0.85);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.aposta {
+    color: #ffd54f;
+    font-weight: bold;
+}
+
+.painel-aposta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    background: #fff;
+    border: 1px solid var(--borda);
+    border-radius: 5px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+}
+
+.painel-aposta label {
+    margin: 0;
+}
+
+.painel-aposta input {
+    width: 130px;
+    margin: 0;
+}
+
+.card-stats {
+    background: #fff;
+    border: 1px solid var(--borda);
+    border-radius: 5px;
+    padding: 18px 20px;
+    margin-bottom: 20px;
+}
+
+.card-stats h2 {
+    margin: 0 0 4px;
+    font-size: 20px;
+}
+
+.card-stats .fonte {
+    margin: 0 0 16px;
+    color: #777;
+    font-size: 13px;
+}
+
+.grade-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 10px;
+}
+
+.item-stats {
+    background: #f7f7f7;
+    border-radius: 6px;
+    padding: 10px 12px;
+}
+
+.item-stats .rotulo {
+    display: block;
+    font-size: 12px;
+    color: #777;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.item-stats strong {
+    font-size: 18px;
+}
+
+.item-stats.positivo strong {
+    color: var(--verde);
+}
+
+.item-stats.negativo strong {
+    color: var(--vermelho);
+}
+
+.item-stats.neutro strong {
+    color: #666;
+}
+
+.aviso {
+    color: #777;
+    font-style: italic;
+}
+
+.tabela-historico {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.tabela-historico th,
+.tabela-historico td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.tabela-historico th {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #777;
+    border-bottom: 2px solid var(--borda);
+}
+
+.tabela-historico tbody tr:hover {
+    background: #fafafa;
+}
+
+.tabela-historico td.positivo {
+    color: var(--verde);
+    font-weight: bold;
+}
+
+.tabela-historico td.negativo {
+    color: var(--vermelho);
+    font-weight: bold;
+}
+
+.tabela-historico td.neutro {
+    color: #666;
+}
+
+.tabela-historico tr.linha-clicavel {
+    cursor: pointer;
+}
+
+.tabela-historico tr.linha-clicavel:hover {
+    background: #eef4ff;
+}
+
+.tag-voce {
+    background: var(--azul);
+    color: #fff;
+    font-size: 11px;
+    border-radius: 10px;
+    padding: 1px 7px;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+.cabecalho-selecionado {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.card-stats h3 {
+    margin: 0 0 10px;
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #777;
+}
+
+.duas-colunas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 16px;
+}
+
+.sub-card {
+    background: #fbfbfc;
+    border: 1px solid #e6e6e6;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.sub-card-geral {
+    background: #f3f7ff;
+    border-color: #d6e4ff;
+    margin-bottom: 16px;
+}
+
+.card-stats.destaque-servidor {
+    border-left: 6px solid var(--azul);
+}
+
+.grupo-stats + .grupo-stats {
+    margin-top: 14px;
+}
+
+.grupo-stats h4 {
+    margin: 0 0 8px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #999;
+}
+
+.item-stats.destaque {
+    background: #eef4ff;
+}
+
+.item-stats.destaque strong {
+    font-size: 22px;
+}
+
+.item-stats.destaque.positivo {
+    background: #eaf7ef;
+}
+
+.item-stats.destaque.negativo {
+    background: #fdecea;
+}
+
+.tabela-historico span.positivo {
+    color: var(--verde);
+}
+
+.tabela-historico span.negativo {
+    color: var(--vermelho);
+}
+
+.controles-replay {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+}
+
+.controles-replay .passo-info {
+    margin-left: auto;
+    color: #666;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.barra-replay {
+    height: 6px;
+    background: #ececec;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.barra-replay span {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: var(--azul);
+    transition: width 0.25s ease;
+}
+
+.legenda-replay {
+    margin: 12px 0 0;
+    font-weight: bold;
+    color: #555;
+}
+
+.replay-final {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+    padding: 12px 16px;
+    border-radius: 6px;
+    background: #f7f7f7;
+    border-left: 6px solid var(--borda);
+    animation: entrarResultado 320ms ease-out;
+}
+
+.replay-final.vitoria {
+    border-left-color: var(--verde);
+    background: #eaf7ef;
+}
+
+.replay-final.derrota {
+    border-left-color: var(--vermelho);
+    background: #fdecea;
+}
+
+.replay-final.empate {
+    border-left-color: #b8860b;
+    background: #fdf6e3;
+}
+
+.replay-final .fonte {
+    display: block;
+    margin: 2px 0 0;
+}
+
+.replay-final #replayFinalLucro {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.roleta {
+    display: flex;
+    gap: 26px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
+.roleta-roda {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    min-width: 190px;
+}
+
+.numero-grande {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 46px;
+    font-weight: bold;
+    color: #fff;
+    background: #444;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    transition: background-color 0.2s;
+}
+
+.numero-grande.red {
+    background: var(--vermelho);
+}
+
+.numero-grande.black {
+    background: #222;
+}
+
+.numero-grande.green {
+    background: var(--verde);
+}
+
+.numero-grande.girando {
+    animation: pulsarRoda 0.45s ease-in-out infinite alternate;
+}
+
+@keyframes pulsarRoda {
+    from {
+        transform: scale(0.94);
+        opacity: 0.75;
+    }
+
+    to {
+        transform: scale(1.04);
+        opacity: 1;
+    }
+}
+
+.fonte-roda {
+    color: #666;
+    font-size: 14px;
+}
+
+.roleta-apostas {
+    flex: 1;
+    min-width: 320px;
+}
+
+.roleta-apostas label {
+    margin-top: 14px;
+}
+
+.botoes-cor {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.botoes-cor .botao-cor {
+    flex: 1;
+}
+
+button.botao-cor.red {
+    background-color: var(--vermelho);
+}
+
+button.botao-cor.black {
+    background-color: #222;
+}
+
+.grade-numeros {
+    display: grid;
+    grid-template-columns: repeat(13, minmax(0, 1fr));
+    gap: 4px;
+    margin: 6px 0 4px;
+}
+
+.grade-numeros button {
+    padding: 8px 0;
+    font-size: 13px;
+    border: 1px solid #ccc;
+}
+
+.grade-numeros button.red {
+    background-color: var(--vermelho);
+    color: #fff;
+    border-color: var(--vermelho);
+}
+
+.grade-numeros button.black {
+    background-color: #222;
+    color: #fff;
+    border-color: #222;
+}
+
+.grade-numeros button.green {
+    background-color: var(--verde);
+    color: #fff;
+    border-color: var(--verde);
+}
+
+.grade-numeros button.selecionado,
+.botoes-cor .botao-cor.selecionado {
+    outline: 3px solid var(--azul);
+    outline-offset: 1px;
+}
+
+.selecao-aposta {
+    margin-top: 18px;
+    font-weight: bold;
+    color: #555;
+}
+
+.painel-resultado {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    flex-wrap: wrap;
+    background: #fff;
+    border: 1px solid var(--borda);
+    border-left: 6px solid var(--borda);
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    animation: entrarResultado 320ms ease-out;
+}
+
+@keyframes entrarResultado {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.painel-resultado.vitoria {
+    border-left-color: var(--verde);
+}
+
+.painel-resultado.derrota {
+    border-left-color: var(--vermelho);
+}
+
+.painel-resultado.empate {
+    border-left-color: #b8860b;
+}
+
+.painel-resultado h2 {
+    margin: 0 0 2px;
+    font-size: 20px;
+}
+
+.painel-resultado.vitoria h2 {
+    color: var(--verde);
+}
+
+.painel-resultado.derrota h2 {
+    color: var(--vermelho);
+}
+
+.painel-resultado.empate h2 {
+    color: #b8860b;
+}
+
+.painel-resultado .descricao {
+    color: #666;
+    font-size: 14px;
+}
+
+.painel-resultado .dados {
+    display: flex;
+    align-items: baseline;
+    gap: 18px;
+    flex-wrap: wrap;
+    color: #555;
+}
+
+.painel-resultado .dados strong {
+    font-size: 18px;
+    color: #333;
+}
+
+.painel-resultado .lucro {
+    font-size: 17px;
+    font-weight: bold;
+}
+
+.painel-resultado .lucro.positivo {
+    color: var(--verde);
+}
+
+.painel-resultado .lucro.negativo {
+    color: var(--vermelho);
+}
+
+.painel-resultado .lucro.neutro {
+    color: #666;
+}
+
+.painel-resultado .saldo-atual {
+    font-size: 14px;
+}

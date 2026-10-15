@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roleta - Game Roulette</title>
+    <link rel="stylesheet" href="/front/static/style.css">
+</head>
+
+<body>
+    <div class="topo">
+        <h1>Roleta</h1>
+        <div>
+            <span id="nomeJogador">-</span> | <span class="saldo" id="saldoJogador">-</span>
+        </div>
+        <div class="acoes" style="margin: 0;">
+            <button class="secundario" onclick="window.location.href='/front/blackjack'">Blackjack</button>
+            <button class="secundario" onclick="window.location.href='/front/estatisticas'">Estatísticas</button>
+            <button class="secundario" onclick="window.location.href='/front/conta'">Minha conta</button>
+            <button class="secundario" onclick="sair()">Sair</button>
+        </div>
+    </div>
+
+    <div class="container largo">
+        <div id="painelResultado" class="painel-resultado" style="display: none;">
+            <div class="resumo">
+                <h2 id="resultadoTitulo"></h2>
+                <span class="descricao" id="resultadoDescricao"></span>
+            </div>
+
+            <div class="dados">
+                <span>Aposta <strong id="resultadoAposta">-</strong></span>
+                <span class="lucro" id="resultadoLucro"></span>
+                <span class="saldo-atual" id="resultadoSaldo"></span>
+            </div>
+
+            <button id="btnConfirmarResultado">Confirmar</button>
+        </div>
+
+        <div class="roleta">
+            <div class="roleta-roda">
+                <div class="numero-grande" id="numeroGrande">?</div>
+                <span class="fonte-roda" id="legendaRoda">Escolha a aposta e gire</span>
+            </div>
+
+            <div class="roleta-apostas">
+                <label>Aposta</label>
+
+                <div class="botoes-cor">
+                    <button class="botao-cor red" data-cor="red">Vermelho</button>
+                    <button class="botao-cor black" data-cor="black">Preto</button>
+                </div>
+
+                <label>Ou um número (paga 36x)</label>
+                <div class="grade-numeros" id="gradeNumeros"></div>
+
+                <label for="valorAposta">Valor da aposta (R$)</label>
+                <input type="number" id="valorAposta" min="1" step="0.01" value="10">
+
+                <button id="btnGirar" class="largo" disabled>Girar</button>
+            </div>
+        </div>
+
+        <div id="selecao" class="selecao-aposta">Nenhuma aposta selecionada</div>
+
+        <div id="mensagem" class="mensagem"></div>
+    </div>
+
+    <script src="/front/static/app.js"></script>
+    <script>
+        const usuario = exigirUsuario();
+
+        const CORES_RODAS = { red: 'vermelho', black: 'preto', green: 'verde' };
+        const NUMEROS_VERMELHOS = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
+
+        let apostaSelecionada = null;
+        let intervaloGiro = null;
+        let girando = false;
+
+        function elemento(id) {
+            return document.getElementById(id);
+        }
+
+        function corDoNumero(numero) {
+            if (numero === 0) {
+                return 'green';
+            }
+
+            return NUMEROS_VERMELHOS.includes(numero) ? 'red' : 'black';
+        }
+
+        function montarGradeNumeros() {
+            const grade = elemento('gradeNumeros');
+
+            for (let numero = 0; numero <= 36; numero++) {
+                const botao = document.createElement('button');
+                botao.textContent = numero;
+                botao.className = corDoNumero(numero);
+                botao.dataset.numero = numero;
+                grade.appendChild(botao);
+            }
+        }
+
+        function atualizarSelecao() {
+            document.querySelectorAll('.grade-numeros button').forEach(botao => {
+                botao.classList.toggle('selecionado',
+                    Boolean(apostaSelecionada) && apostaSelecionada.tipo === 'number' && Number(botao.dataset.numero) === apostaSelecionada.valor);
+            });
+
+            document.querySelectorAll('.botao-cor').forEach(botao => {
+                botao.classList.toggle('selecionado',
+                    Boolean(apostaSelecionada) && apostaSelecionada.tipo === 'color' && botao.dataset.cor === apostaSelecionada.valor);
+            });
+
+            elemento('btnGirar').disabled = !apostaSelecionada || girando;
+
+            elemento('selecao').textContent = apostaSelecionada
+                ? (apostaSelecionada.tipo === 'number'
+                    ? 'Aposta no número ' + apostaSelecionada.valor + ' (paga 36x)'
+                    : 'Aposta na cor ' + CORES_RODAS[apostaSelecionada.valor] + ' (paga 2x)')
+                : 'Nenhuma aposta selecionada';
+        }
+
+        function atualizarSaldo(saldo) {
+            elemento('saldoJogador').textContent = formatarReal(saldo);
+
+            const dados = obterUsuario();
+
+            if (dados) {
+                dados.saldo = saldo;
+                salvarUsuario(dados);
+            }
+        }
+
+        function iniciarAnimacao() {
+            clearInterval(intervaloGiro);
+            esconderResultado();
+
+            const roda = elemento('numeroGrande');
+            roda.className = 'numero-grande girando';
+            elemento('legendaRoda').textContent = 'Girando...';
+
+            intervaloGiro = setInterval(() => {
+                roda.textContent = Math.floor(Math.random() * 37);
+            }, 70);
+        }
+
+        function finalizarGiro(dados) {
+            clearInterval(intervaloGiro);
+            intervaloGiro = null;
+            girando = false;
+
+            const roda = elemento('numeroGrande');
+            roda.className = 'numero-grande ' + (dados.cor || '');
+            roda.textContent = dados.numero;
+
+            elemento('legendaRoda').textContent = dados.numero + ' - ' + (CORES_RODAS[dados.cor] || dados.cor || '');
+            elemento('painelResultado').className = 'painel-resultado ' + (dados.ganhou ? 'vitoria' : 'derrota');
+            elemento('resultadoTitulo').textContent = dados.ganhou ? 'Você ganhou!' : 'Você perdeu';
+            elemento('resultadoDescricao').textContent =
+                'Saiu ' + dados.numero + ' (' + (CORES_RODAS[dados.cor] || dados.cor) + '). Sua aposta: ' +
+                (dados.tipo === 'number' ? 'número ' + dados.aposta : 'cor ' + (CORES_RODAS[dados.aposta] || dados.aposta)) + '.';
+
+            elemento('resultadoAposta').textContent = formatarReal(dados.valorAposta);
+
+            const classe = dados.lucro > 0 ? 'positivo' : (dados.lucro < 0 ? 'negativo' : 'neutro');
+            elemento('resultadoLucro').className = 'lucro ' + classe;
+            elemento('resultadoLucro').textContent = dados.lucro > 0
+                ? 'Você ganhou ' + formatarReal(dados.lucro)
+                : (dados.lucro < 0 ? 'Você perdeu ' + formatarReal(Math.abs(dados.lucro)) : 'Empate');
+            elemento('resultadoSaldo').textContent = 'Saldo: ' + formatarReal(dados.saldo);
+
+            elemento('painelResultado').style.display = 'flex';
+
+            atualizarSaldo(dados.saldo);
+            atualizarSelecao();
+        }
+
+        function esconderResultado() {
+            elemento('painelResultado').style.display = 'none';
+        }
+
+        async function girar() {
+            const mensagem = elemento('mensagem');
+
+            if (!apostaSelecionada) {
+                exibirMensagem(mensagem, 'Escolha uma cor ou um número para apostar', 'erro');
+                return;
+            }
+
+            const inicio = Date.now();
+            girando = true;
+            atualizarSelecao();
+            exibirMensagem(mensagem, '');
+            iniciarAnimacao();
+
+            try {
+                const dados = await api('/front/api/roulette/jogar', 'POST', {
+                    idUsuario: usuario.id,
+                    bet: apostaSelecionada.valor,
+                    bet_amount: elemento('valorAposta').value
+                });
+
+                const restante = Math.max(0, 1200 - (Date.now() - inicio));
+                setTimeout(() => finalizarGiro(dados), restante);
+            } catch (error) {
+                clearInterval(intervaloGiro);
+                intervaloGiro = null;
+                girando = false;
+                elemento('numeroGrande').className = 'numero-grande';
+                elemento('numeroGrande').textContent = '?';
+                elemento('legendaRoda').textContent = 'Escolha a aposta e gire';
+                atualizarSelecao();
+                exibirMensagem(mensagem, error.message, 'erro');
+            }
+        }
+
+        async function carregarSaldo() {
+            try {
+                const dados = await api('/front/api/conta?idUsuario=' + encodeURIComponent(usuario.id), 'GET');
+                salvarUsuario(dados.usuario);
+                elemento('nomeJogador').textContent = dados.usuario.usuario;
+                atualizarSaldo(dados.usuario.saldo);
+            } catch (error) {
+                if (tratarSessaoInvalida(error)) return;
+                exibirMensagem(elemento('mensagem'), error.message, 'erro');
+            }
+        }
+
+        elemento('gradeNumeros').addEventListener('click', function (evento) {
+            const numero = evento.target.dataset.numero;
+
+            if (numero !== undefined) {
+                apostaSelecionada = { tipo: 'number', valor: Number(numero) };
+                atualizarSelecao();
+            }
+        });
+
+        document.querySelectorAll('.botao-cor').forEach(botao => {
+            botao.addEventListener('click', function () {
+                apostaSelecionada = { tipo: 'color', valor: botao.dataset.cor };
+                atualizarSelecao();
+            });
+        });
+
+        elemento('btnGirar').addEventListener('click', girar);
+        elemento('btnConfirmarResultado').addEventListener('click', function () {
+            esconderResultado();
+        });
+
+        montarGradeNumeros();
+        atualizarSelecao();
+
+        if (usuario) {
+            elemento('nomeJogador').textContent = usuario.usuario;
+            atualizarSaldo(usuario.saldo);
+            carregarSaldo();
+        }
+    </script>
+</body>
+
+</html>

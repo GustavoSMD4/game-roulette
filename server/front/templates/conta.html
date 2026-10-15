@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minha Conta - Game Roulette</title>
+    <link rel="stylesheet" href="/front/static/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <h2>Minha conta</h2>
+
+        <p><strong>Usuário:</strong> <span id="nomeUsuario">-</span></p>
+        <p><strong>Saldo disponível:</strong> <span id="saldo">-</span></p>
+
+        <h3>Adicionar saldo</h3>
+        <form id="formDeposito">
+            <label for="valor">Valor do depósito</label>
+            <input type="number" id="valor" min="0.01" step="0.01" placeholder="0,00" required>
+
+            <button type="submit" class="largo">Depositar</button>
+        </form>
+
+        <div id="mensagem" class="mensagem"></div>
+
+        <div class="acoes">
+            <button onclick="window.location.href='/front/roleta'">Jogar Roleta</button>
+            <button onclick="window.location.href='/front/blackjack'">Jogar Blackjack</button>
+            <button class="secundario" onclick="window.location.href='/front/estatisticas'">Estatísticas</button>
+            <button class="secundario" onclick="sair()">Sair</button>
+        </div>
+    </div>
+
+    <script src="/front/static/app.js"></script>
+    <script>
+        const usuario = exigirUsuario();
+
+        function mostrar(conta) {
+            document.getElementById('nomeUsuario').textContent = conta.usuario;
+            document.getElementById('saldo').textContent = formatarReal(conta.saldo);
+        }
+
+        async function carregarConta() {
+            const mensagem = document.getElementById('mensagem');
+
+            try {
+                const dados = await api('/front/api/conta?idUsuario=' + encodeURIComponent(usuario.id), 'GET');
+                salvarUsuario(dados.usuario);
+                mostrar(dados.usuario);
+            } catch (error) {
+                if (tratarSessaoInvalida(error)) return;
+                exibirMensagem(mensagem, error.message, 'erro');
+            }
+        }
+
+        document.getElementById('formDeposito').addEventListener('submit', async function (evento) {
+            evento.preventDefault();
+
+            const mensagem = document.getElementById('mensagem');
+            exibirMensagem(mensagem, 'Depositando...');
+
+            try {
+                const dados = await api('/front/api/depositar', 'POST', {
+                    idUsuario: usuario.id,
+                    valor: document.getElementById('valor').value
+                });
+
+                salvarUsuario(dados.usuario);
+                mostrar(dados.usuario);
+                this.reset();
+                exibirMensagem(mensagem, 'Depósito realizado com sucesso!', 'sucesso');
+            } catch (error) {
+                if (tratarSessaoInvalida(error)) return;
+                exibirMensagem(mensagem, error.message, 'erro');
+            }
+        });
+
+        if (usuario) {
+            mostrar(usuario);
+            carregarConta();
+        }
+    </script>
+</body>
+
+</html>

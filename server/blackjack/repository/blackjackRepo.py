@@ -8,10 +8,18 @@ class BlackjackRepo:
     def __init__(self, conn: sqlite3.Connection):
         self.__conn = conn
         self.__cursor = conn.cursor()
+        self.__garantirColunaValorAposta()
         
     @classmethod
     def newBlackjackRepo(cls):
         return cls(sqlite3.Connection(Configs.newConfigs().getCaminhoDB(), check_same_thread=False))
+
+    def __garantirColunaValorAposta(self):
+        colunas = [linha[1] for linha in self.__cursor.execute("PRAGMA table_info(BLACKJACK)").fetchall()]
+
+        if colunas and "VALOR_APOSTA" not in colunas:
+            self.__cursor.execute("ALTER TABLE BLACKJACK ADD COLUMN VALOR_APOSTA REAL NOT NULL DEFAULT 0")
+            self.__conn.commit()
     
     def consultarJogo(self, idJogo: str):
         self.__cursor.execute(
@@ -51,11 +59,19 @@ class BlackjackRepo:
     
     def createNovoJogo(self, jogo: BlackjackModel):
         self.__cursor.execute(
-            "INSERT INTO BLACKJACK (ID, JOGADOR_HOST) VALUES (?, ?)",
-            (jogo.getId(), jogo.getIdJogador())
+            "INSERT INTO BLACKJACK (ID, JOGADOR_HOST, VALOR_APOSTA) VALUES (?, ?, ?)",
+            (jogo.getId(), jogo.getIdJogador(), jogo.getValorAposta())
         )
         self.__conn.commit()
         return self.consultarJogo(jogo.getId())
+
+    def atualizarValorAposta(self, idJogo: str, valorAposta: float):
+        self.__cursor.execute(
+            "UPDATE BLACKJACK SET VALOR_APOSTA = ? WHERE ID = ?",
+            (valorAposta, idJogo)
+        )
+        self.__conn.commit()
+        return self.consultarJogo(idJogo)
     
     def createJogador(self, idJogo: str, jogador: JogadorBlackjackModel):
         self.__cursor.execute(

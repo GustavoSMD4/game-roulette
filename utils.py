@@ -1,4 +1,14 @@
 
+
+from datetime import datetime, timedelta, timezone
+
+FUSO_BRASILIA = timezone(timedelta(hours=-3))
+
+
+def agoraBrasilia():
+    """Data/hora atual no horário de Brasília (UTC-3), no formato aceito pelo SQLite."""
+    return datetime.now(FUSO_BRASILIA).strftime("%Y-%m-%d %H:%M:%S")
+
 
 def formatarReal(valor: float):
     if not isinstance(valor, float):
