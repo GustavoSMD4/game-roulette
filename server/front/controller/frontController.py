@@ -78,6 +78,10 @@ class FrontController:
         def frontBlackjackSala():
             return send_from_directory(TEMPLATES_DIR, "blackjackSala.html")
 
+        @self.__app.route("/front/truco")
+        def frontTruco():
+            return send_from_directory(TEMPLATES_DIR, "truco.html")
+
         @self.__app.route("/front/static/<path:filename>")
         def frontStatic(filename):
             return send_from_directory(STATIC_DIR, filename)
@@ -249,6 +253,80 @@ class FrontController:
         def frontApiBlackjackSalaChat():
             try:
                 dados = self.__service().enviarMensagemSalaBlackjack(request.json or {})
+                return jsonify(dados), 201
+
+            except Exception as e:
+                return jsonify({"error": str(e)}), 400
+
+        @self.__app.route("/front/api/truco/sala", methods=["POST"])
+        @self.__limite("60 per minute")
+        def frontApiTrucoSala():
+            try:
+                dados = self.__service().criarSalaTruco(request.json or {})
+                return jsonify(dados), 201
+
+            except Exception as e:
+                return jsonify({"error": str(e)}), 400
+
+        @self.__app.route("/front/api/truco/sala/entrar", methods=["POST"])
+        @self.__limite("120 per minute")
+        def frontApiTrucoSalaEntrar():
+            try:
+                return jsonify(self.__service().entrarSalaTruco(request.json or {})), 200
+
+            except Exception as e:
+                return jsonify({"error": str(e)}), 400
+
+        @self.__app.route("/front/api/truco/sala/time", methods=["POST"])
+        @self.__limite("120 per minute")
+        def frontApiTrucoSalaTime():
+            try:
+                return jsonify(self.__service().marcarTimeTruco(request.json or {})), 200
+
+            except Exception as e:
+                return jsonify({"error": str(e)}), 400
+
+        @self.__app.route("/front/api/truco/sala/estado", methods=["POST"])
+        @self.__limite("600 per minute")
+        def frontApiTrucoSalaEstado():
+            try:
+                return jsonify(self.__service().estadoSalaTruco(request.json or {})), 200
+
+            except Exception as e:
+                return jsonify({"error": str(e)}), 400
+
+        @self.__app.route("/front/api/truco/sala/jogar", methods=["POST"])
+        @self.__limite("240 per minute")
+        def frontApiTrucoSalaJogar():
+            try:
+                return jsonify(self.__service().jogarSalaTruco(request.json or {})), 200
+
+            except Exception as e:
+                return jsonify({"error": str(e)}), 400
+
+        @self.__app.route("/front/api/truco/sala/truco", methods=["POST"])
+        @self.__limite("240 per minute")
+        def frontApiTrucoSalaTruco():
+            try:
+                return jsonify(self.__service().trucoSalaTruco(request.json or {})), 200
+
+            except Exception as e:
+                return jsonify({"error": str(e)}), 400
+
+        @self.__app.route("/front/api/truco/sala/nova-partida", methods=["POST"])
+        @self.__limite("60 per minute")
+        def frontApiTrucoSalaNovaPartida():
+            try:
+                return jsonify(self.__service().novaPartidaTruco(request.json or {})), 200
+
+            except Exception as e:
+                return jsonify({"error": str(e)}), 400
+
+        @self.__app.route("/front/api/truco/sala/chat", methods=["POST"])
+        @self.__limite("120 per minute")
+        def frontApiTrucoSalaChat():
+            try:
+                dados = self.__service().enviarMensagemSalaTruco(request.json or {})
                 return jsonify(dados), 201
 
             except Exception as e:

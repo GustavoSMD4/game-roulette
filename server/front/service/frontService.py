@@ -5,6 +5,7 @@ from server.blackjack.service.mesaBlackjackService import MesaBlackjackService
 from server.games.roulette import Roulette
 from server.roulette.service.mesaRoletaService import MesaRoletaService
 from server.roulette.service.rouletteService import RouletteService
+from server.truco.service.mesaTrucoService import MesaTrucoService
 from server.usuario.model.usuario import Usuario
 from server.usuario.repository.usuarioRepo import UsuarioRepo
 from server.usuario.service.usuarioService import UsuarioService
@@ -13,7 +14,8 @@ from server.usuario.service.usuarioService import UsuarioService
 class FrontService:
     def __init__(self, usuarioRepo: UsuarioRepo, usuarioService: UsuarioService, blackjackRepo: BlackjackRepo,
                  rouletteService: RouletteService, blackjackService: BlackjackService,
-                 mesaRoletaService: MesaRoletaService, mesaBlackjackService: MesaBlackjackService):
+                 mesaRoletaService: MesaRoletaService, mesaBlackjackService: MesaBlackjackService,
+                 mesaTrucoService: MesaTrucoService):
         self.__usuarioRepo = usuarioRepo
         self.__usuarioService = usuarioService
         self.__blackjackRepo = blackjackRepo
@@ -21,12 +23,13 @@ class FrontService:
         self.__blackjackService = blackjackService
         self.__mesaRoletaService = mesaRoletaService
         self.__mesaBlackjackService = mesaBlackjackService
+        self.__mesaTrucoService = mesaTrucoService
 
     @classmethod
     def newService(cls):
         return cls(UsuarioRepo.newRepo(), UsuarioService.newService(), BlackjackRepo.newBlackjackRepo(),
                    RouletteService.newService(), BlackjackService.blackjackService(),
-                   MesaRoletaService.newService(), MesaBlackjackService.newService())
+                   MesaRoletaService.newService(), MesaBlackjackService.newService(), MesaTrucoService.newService())
 
     def login(self, req: dict):
         usuario = req.get("usuario")
@@ -281,6 +284,70 @@ class FrontService:
 
     def enviarMensagemSalaBlackjack(self, req: dict):
         return self.__mesaBlackjackService.enviarMensagem({
+            "idUsuario": req.get("idUsuario"),
+            "codigo": req.get("codigo"),
+            "texto": req.get("texto")
+        })
+
+    # ------------------------------------------------------------- truco
+
+    def criarSalaTruco(self, req: dict):
+        return self.__mesaTrucoService.criarSala({
+            "idUsuario": req.get("idUsuario"),
+            "modo": req.get("modo"),
+            "nome": req.get("nome")
+        })
+
+    def entrarSalaTruco(self, req: dict):
+        return self.__mesaTrucoService.entrar({
+            "idUsuario": req.get("idUsuario"),
+            "codigo": req.get("codigo"),
+            "equipe": req.get("equipe"),
+            "desdeChat": req.get("desdeChat")
+        })
+
+    def marcarTimeTruco(self, req: dict):
+        return self.__mesaTrucoService.marcarTime({
+            "idUsuario": req.get("idUsuario"),
+            "codigo": req.get("codigo"),
+            "nome": req.get("nome"),
+            "pronto": req.get("pronto"),
+            "desdeChat": req.get("desdeChat")
+        })
+
+    def estadoSalaTruco(self, req: dict):
+        return self.__mesaTrucoService.estado({
+            "idUsuario": req.get("idUsuario"),
+            "codigo": req.get("codigo"),
+            "desdeChat": req.get("desdeChat")
+        })
+
+    def jogarSalaTruco(self, req: dict):
+        return self.__mesaTrucoService.jogar({
+            "idUsuario": req.get("idUsuario"),
+            "codigo": req.get("codigo"),
+            "carta": req.get("carta"),
+            "indice": req.get("indice"),
+            "desdeChat": req.get("desdeChat")
+        })
+
+    def trucoSalaTruco(self, req: dict):
+        return self.__mesaTrucoService.truco({
+            "idUsuario": req.get("idUsuario"),
+            "codigo": req.get("codigo"),
+            "acao": req.get("acao"),
+            "desdeChat": req.get("desdeChat")
+        })
+
+    def novaPartidaTruco(self, req: dict):
+        return self.__mesaTrucoService.novaPartida({
+            "idUsuario": req.get("idUsuario"),
+            "codigo": req.get("codigo"),
+            "desdeChat": req.get("desdeChat")
+        })
+
+    def enviarMensagemSalaTruco(self, req: dict):
+        return self.__mesaTrucoService.enviarMensagem({
             "idUsuario": req.get("idUsuario"),
             "codigo": req.get("codigo"),
             "texto": req.get("texto")
