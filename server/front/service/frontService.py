@@ -302,16 +302,6 @@ class FrontService:
         return self.__mesaTrucoService.entrar({
             "idUsuario": req.get("idUsuario"),
             "codigo": req.get("codigo"),
-            "equipe": req.get("equipe"),
-            "desdeChat": req.get("desdeChat")
-        })
-
-    def marcarTimeTruco(self, req: dict):
-        return self.__mesaTrucoService.marcarTime({
-            "idUsuario": req.get("idUsuario"),
-            "codigo": req.get("codigo"),
-            "nome": req.get("nome"),
-            "pronto": req.get("pronto"),
             "desdeChat": req.get("desdeChat")
         })
 

@@ -277,15 +277,6 @@ class FrontController:
             except Exception as e:
                 return jsonify({"error": str(e)}), 400
 
-        @self.__app.route("/front/api/truco/sala/time", methods=["POST"])
-        @self.__limite("120 per minute")
-        def frontApiTrucoSalaTime():
-            try:
-                return jsonify(self.__service().marcarTimeTruco(request.json or {})), 200
-
-            except Exception as e:
-                return jsonify({"error": str(e)}), 400
-
         @self.__app.route("/front/api/truco/sala/estado", methods=["POST"])
         @self.__limite("600 per minute")
         def frontApiTrucoSalaEstado():

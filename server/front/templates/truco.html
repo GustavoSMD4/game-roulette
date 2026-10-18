@@ -84,13 +84,16 @@
                 <section class="card-stats" id="cardEntrar" style="display: none;">
                     <h2>Entrar na mesa</h2>
                     <p class="fonte" id="textoEntrar">Aguardando jogadores.</p>
-                    <div class="acoes" id="acoesEntrar"></div>
+                    <button id="btnEntrar">Entrar na mesa</button>
                 </section>
 
-                <section class="card-stats" id="cardTimes" style="display: none;">
-                    <h2>Times</h2>
-                    <p class="fonte" id="textoTimes">Dê um nome ao seu time e marque como pronto.</p>
-                    <div class="times" id="listaTimes"></div>
+                <section class="card-stats decisoes" id="cardPedido" style="display: none;">
+                    <div class="titulo-com-contagem">
+                        <h2 id="tituloPedido">Pedido de truco</h2>
+                        <span class="contagem" id="tempoPedido">0</span>
+                    </div>
+                    <p class="fonte" id="textoPedido"></p>
+                    <div class="acoes" id="acoesPedido"></div>
                 </section>
 
                 <section class="card-stats destaque-mesa">
@@ -113,16 +116,6 @@
                     <p class="mensagem-mesa" id="mensagemMesa"></p>
 
                     <div class="mesa truco-mesa">
-                        <div class="alerta-mesa" id="alertaMesa" hidden>
-                            <div class="alerta-topo">
-                                <strong id="alertaTitulo">Truco!</strong>
-                                <span class="contagem" id="alertaTempo">0</span>
-                            </div>
-                            <p class="fonte" id="alertaTexto"></p>
-                            <div class="alerta-votos" id="alertaVotos"></div>
-                            <div class="acoes" id="acoesPedido"></div>
-                        </div>
-
                         <p class="titulo-secao-mini" id="tituloVaza">Na mesa</p>
 
                         <div class="truco-circulo" id="circulo">
@@ -325,33 +318,14 @@
             return equipe === minhaEquipeAtual() ? "nós" : "eles";
         }
 
-        function nomeTime(equipe) {
-            const times = estadoAtual && estadoAtual.times;
-
-            return (times && times[equipe] && times[equipe].nome) || ("Time " + equipe);
-        }
-
-        function jogadoresDoTime(equipe) {
-            const times = estadoAtual && estadoAtual.times;
-
-            return (times && times[equipe] && times[equipe].jogadores) || [];
-        }
-
-        // meu time sempre na esquerda do placar
-        function ordemDosTimes() {
-            return minhaEquipeAtual() === "B" ? ["B", "A"] : ["A", "B"];
-        }
-
         function nomeEquipeReal(equipe) {
-            const jogadores = jogadoresDoTime(equipe);
+            const nomes = estadoAtual && estadoAtual.nomesEquipes ? estadoAtual.nomesEquipes[equipe] : null;
 
-            return nomeTime(equipe) + (jogadores.length ? ' (' + jogadores.join(' e ') + ')' : '');
-        }
+            if (!nomes || nomes.length === 0) {
+                return "Time " + equipe;
+            }
 
-        function pontosDe(dados, equipe) {
-            const pontos = dados.pontos || { A: 0, B: 0 };
-
-            return pontos[equipe] || 0;
+            return nomes.join(" e ");
         }
 
         function nomeDoValor(valor) {
@@ -361,20 +335,17 @@
         // ------------------------------------------------------------- mesa
 
         function renderizarPlacar(dados) {
-            const ordem = ordemDosTimes();
+            const pontos = dados.pontos || { A: 0, B: 0 };
             const minha = minhaEquipeAtual();
             const tipo = dados.tipoMao ? (NOMES_TIPO[dados.tipoMao] || "") : "";
 
             elemento('placar').innerHTML =
                 '<div class="truco-placar-linha">' +
-                ordem.map(equipe => {
-                    const meu = equipe === minha;
-
-                    return '<span class="pontos ' + (meu ? 'nos' : 'eles') + '">' +
-                        '<strong>' + pontosDe(dados, equipe) + '</strong>' +
-                        '<span class="fonte">' + escapar(nomeTime(equipe)) + (meu ? ' (nós)' : ' (eles)') + '</span>' +
-                        '</span>';
-                }).join('<span class="truco-x">x</span>') +
+                '<span class="pontos nos' + (minha === "A" ? '' : ' fora') + '">' +
+                '<strong>' + (pontos.A || 0) + '</strong><span class="fonte">nós (A)</span></span>' +
+                '<span class="truco-x">x</span>' +
+                '<span class="pontos eles' + (minha === "A" ? ' fora' : '') + '">' +
+                '<strong>' + (pontos.B || 0) + '</strong><span class="fonte">eles (B)</span></span>' +
                 '</div>' +
                 (dados.fase === "jogando" || dados.fase === "resultado" || dados.fase === "fim"
                     ? '<p class="fonte truco-info">' + (tipo ? '<strong>' + tipo + '</strong> · ' : '') +
@@ -623,176 +594,43 @@
             }
         }
 
-        // O alerta de truco aparece em cima da mesa, para ninguém perder o pedido
         function renderizarPedido(dados) {
-            const alerta = elemento('alertaMesa');
+            const card = elemento('cardPedido');
             const pedido = dados.pedido;
 
             if (!pedido) {
-                alerta.hidden = true;
+                card.style.display = 'none';
                 return;
             }
 
-            alerta.hidden = false;
-            alerta.className = 'alerta-mesa ' + (pedido.meu ? 'alerta-meu' : 'alerta-respondendo');
-            elemento('alertaTitulo').textContent =
-                nomeTime(pedido.equipe) + ' pediu ' + nomeDoValor(pedido.valor) + '!';
-            elemento('alertaTexto').textContent = pedido.meu
-                ? 'Se ' + pedido.nomeTimeRespondendo + ' aceitar, a mão vale ' + pedido.valor +
-                  ' pontos. Se correrem, você leva ' + pedido.anterior + '.'
-                : 'Vale ' + pedido.valor + ' pontos se vocês aceitarem. Se correrem, ' +
-                  nomeTime(pedido.equipe) + ' leva ' + pedido.anterior + '.';
-
-            elemento('alertaVotos').innerHTML = (pedido.votos || []).map(voto =>
-                '<span class="voto' + (voto.capitao ? ' capitao' : '') + (voto.voto ? ' votou' : '') + '">' +
-                escapar(voto.nome) + (voto.capitao ? ' (dono do time)' : '') + ': ' +
-                nomeDoVoto(voto.voto) + '</span>'
-            ).join('') + (pedido.faltamVotar > 0
-                ? '<span class="voto regra">divergência quem decide é ' +
-                  escapar(pedido.capitaoNome || "o dono do time") + '</span>'
-                : '');
+            card.style.display = 'block';
+            elemento('tituloPedido').textContent = pedido.meu
+                ? 'Você pediu ' + nomeDoValor(pedido.valor)
+                : 'Pedido de truco';
+            elemento('textoPedido').textContent = pedido.meu
+                ? 'Vale ' + pedido.valor + ' pontos se eles aceitarem. Se correrem, você leva ' + pedido.anterior + '.'
+                : nomeEquipeReal(pedido.equipe) + ' pediu ' + nomeDoValor(pedido.valor) +
+                  ': a mão passa a valer ' + pedido.valor + ' pontos, ou você corre e eles levam ' + pedido.anterior + '.';
 
             const container = elemento('acoesPedido');
             container.innerHTML = '';
 
-            if (pedido.podeVotar) {
-                const aceitar = document.createElement('button');
-                aceitar.textContent = 'Aceitar (' + pedido.valor + ')';
-                aceitar.addEventListener('click', () => responderTruco('aceitar'));
-
-                const correr = document.createElement('button');
-                correr.className = 'secundario';
-                correr.textContent = 'Correr';
-                correr.addEventListener('click', () => responderTruco('correr'));
-
-                container.appendChild(aceitar);
-                container.appendChild(correr);
-
-                if (pedido.souCapitao) {
-                    const nota = document.createElement('p');
-                    nota.className = 'fonte';
-                    nota.textContent = 'Você é o dono do time: se houver divergência, o seu voto decide.';
-                    container.appendChild(nota);
-                }
-
+            if (!pedido.podeResponder) {
+                container.innerHTML = '<p class="fonte">Esperando a resposta do outro time...</p>';
                 return;
             }
 
-            const aviso = document.createElement('p');
-            aviso.className = 'fonte';
-            aviso.textContent = pedido.souRespondente
-                ? 'Seu voto: ' + nomeDoVoto(pedido.meuVoto) + '. Esperando o resto do time...'
-                : 'Esperando a resposta de ' + pedido.nomeTimeRespondendo + '...';
-            container.appendChild(aviso);
-        }
+            const aceitar = document.createElement('button');
+            aceitar.textContent = 'Aceitar (' + pedido.valor + ')';
+            aceitar.addEventListener('click', () => responderTruco('aceitar'));
 
-        function nomeDoVoto(voto) {
-            if (voto === "aceitar") {
-                return "aceitar";
-            }
+            const correr = document.createElement('button');
+            correr.className = 'secundario';
+            correr.textContent = 'Correr';
+            correr.addEventListener('click', () => responderTruco('correr'));
 
-            return voto === "correr" ? "correr" : "não votou";
-        }
-
-        const blocosTime = new Map();
-
-        function criarBlocoTime(time) {
-            const bloco = document.createElement('div');
-            bloco.className = 'time-bloco';
-            bloco.dataset.time = time;
-            bloco.innerHTML =
-                '<div class="time-topo">' +
-                '<strong class="time-nome"></strong>' +
-                '<span class="time-selo"></span>' +
-                '</div>' +
-                '<p class="fonte time-jogadores"></p>' +
-                '<div class="time-acoes">' +
-                '<input type="text" class="time-input" maxlength="20" placeholder="Nome do time" autocomplete="off">' +
-                '<button class="secundario time-salvar">Salvar nome</button>' +
-                '<button class="time-pronto"></button>' +
-                '</div>';
-
-            bloco.querySelector('.time-salvar').addEventListener('click', () => {
-                marcarTime({ nome: bloco.querySelector('.time-input').value });
-            });
-
-            bloco.querySelector('.time-pronto').addEventListener('click', () => {
-                const dados = (estadoAtual && estadoAtual.times) ? estadoAtual.times[time] : null;
-                marcarTime({ pronto: !(dados && dados.pronto) });
-            });
-
-            return bloco;
-        }
-
-        function renderizarTimes(dados) {
-            const card = elemento('cardTimes');
-            const lista = elemento('listaTimes');
-            const times = dados.times || {};
-            const naMesa = (dados.jogadores || []).some(jogador => jogador.eu === true);
-            const mostrar = Boolean(dados.sala) && !dados.expirada && dados.fase === "esperando";
-
-            card.style.display = mostrar ? 'block' : 'none';
-            elemento('acoesEntrar').innerHTML = '';
-
-            if (!mostrar) {
-                return;
-            }
-
-            ["A", "B"].forEach(time => {
-                const info = times[time];
-
-                if (!info) {
-                    return;
-                }
-
-                let bloco = blocosTime.get(time);
-
-                if (!bloco) {
-                    bloco = criarBlocoTime(time);
-                    blocosTime.set(time, bloco);
-                }
-
-                if (!bloco.parentElement) {
-                    lista.appendChild(bloco);
-                }
-
-                bloco.className = 'time-bloco' + (info.meu ? ' meu' : '') + (info.pronto ? ' pronto' : '');
-                bloco.querySelector('.time-nome').textContent = info.nome + (info.meu ? ' (seu time)' : '');
-                bloco.querySelector('.time-selo').textContent = info.pronto
-                    ? 'pronto'
-                    : (info.completo ? 'falta marcar pronto' : 'faltam ' + info.faltam + ' jogador(es)');
-                bloco.querySelector('.time-selo').className = 'time-selo ' + (info.pronto ? 'ok' : 'pendente');
-                bloco.querySelector('.time-jogadores').textContent = info.jogadores.length
-                    ? 'Jogadores: ' + info.jogadores.join(', ') + (info.capitao ? ' · dono do time: ' + info.capitao : '')
-                    : 'Ninguém nesse time ainda.';
-
-                const acoes = bloco.querySelector('.time-acoes');
-                acoes.style.display = info.meu ? 'flex' : 'none';
-
-                if (info.meu) {
-                    const campo = bloco.querySelector('.time-input');
-
-                    if (document.activeElement !== campo && campo.value !== info.nome) {
-                        campo.value = info.nome;
-                    }
-
-                    const botao = bloco.querySelector('.time-pronto');
-                    botao.textContent = info.pronto ? 'Cancelar pronto' : 'Marcar como pronto';
-                    botao.disabled = !info.completo && !info.pronto;
-                }
-
-                if (!naMesa) {
-                    const entrar = document.createElement('button');
-                    entrar.textContent = 'Entrar no ' + info.nome;
-                    entrar.disabled = info.completo;
-                    entrar.addEventListener('click', () => entrarNaMesa(time));
-                    elemento('acoesEntrar').appendChild(entrar);
-                }
-            });
-
-            elemento('textoTimes').textContent = dados.mesaPronta
-                ? 'Tudo pronto! As cartas já estão saindo.'
-                : 'Os dois times precisam estar completos e marcados como prontos para a partida começar.';
+            container.appendChild(aceitar);
+            container.appendChild(correr);
         }
 
         function renderizarAcoes(dados) {
@@ -836,12 +674,11 @@
                 ? 'Fim de jogo!'
                 : (resultado.numero ? resultado.numero + 'ª mão' : 'Resultado da mão');
 
-            const ordem = ordemDosTimes();
             const itens = [
                 ['Vencedor da mão', nomeEquipeReal(resultado.vencedor) + ' (' + nomeDaEquipe(resultado.vencedor) + ')'],
                 ['Valor da mão', resultado.valor + ' ponto(s)'],
-                ['Placar', nomeTime(ordem[0]) + ' ' + pontosDe({ pontos: resultado.pontos }, ordem[0]) + ' x ' +
-                    pontosDe({ pontos: resultado.pontos }, ordem[1]) + ' ' + nomeTime(ordem[1])]
+                ['Placar', 'Nós ' + (resultado.pontos ? resultado.pontos.A : 0) + ' x ' +
+                    (resultado.pontos ? resultado.pontos.B : 0) + ' Eles']
             ];
 
             if (resultado.desistiu) {
@@ -882,16 +719,15 @@
         }
 
         function renderizarHistorico(dados) {
+            const pontos = dados.pontos || { A: 0, B: 0 };
             const ganhas = dados.maosGanhas || { A: 0, B: 0 };
-            elemento('contagemMaos').textContent = (ganhas.A || 0) + (ganhas.B || 0);
+            elemento('contagemMaos').textContent = ganhas.A + ganhas.B;
 
-            elemento('pontosEquipes').innerHTML = ordemDosTimes().map(equipe => {
-                const meu = equipe === minhaEquipeAtual();
-
-                return '<div class="item-stats"><span class="rotulo">' + escapar(nomeTime(equipe)) +
-                    (meu ? ' (nós)' : ' (eles)') + '</span><strong>' + pontosDe(dados, equipe) +
-                    ' pontos</strong><span class="fonte">' + (ganhas[equipe] || 0) + ' mão(s)</span></div>';
-            }).join('');
+            elemento('pontosEquipes').innerHTML =
+                '<div class="item-stats"><span class="rotulo">Nós (A)</span><strong>' + (pontos.A || 0) +
+                ' pontos</strong><span class="fonte">' + ganhas.A + ' mão(s)</span></div>' +
+                '<div class="item-stats"><span class="rotulo">Eles (B)</span><strong>' + (pontos.B || 0) +
+                ' pontos</strong><span class="fonte">' + ganhas.B + ' mão(s)</span></div>';
 
             const historico = dados.historico || [];
 
@@ -946,7 +782,10 @@
 
         function ajustarFase(dados) {
             const fase = dados.expirada ? "expirada" : dados.fase;
-            const podeEntrar = Boolean(dados.podeEntrar);
+            const jogadores = dados.jogadores || [];
+            const sentado = jogadores.some(jogador => jogador.eu);
+            const faltam = Math.max(0, (dados.jogadoresPorMesa || 0) - (dados.assentosOcupados || 0));
+            const podeEntrar = dados.fase === "esperando" && !sentado && faltam > 0;
 
             elemento('statusBar').className = 'status-bar fase-' + fase;
             elemento('barraFase').className = 'fase-' + fase;
@@ -959,9 +798,10 @@
             elemento('cardEntrar').style.display = podeEntrar ? 'block' : 'none';
 
             if (podeEntrar) {
-                elemento('textoEntrar').textContent = 'Mesa ' + (dados.modo || '') + ': ' +
-                    (dados.assentosOcupados || 0) + ' de ' + (dados.jogadoresPorMesa || 0) +
-                    ' jogadores. Escolha o time para entrar.';
+                elemento('textoEntrar').textContent = dados.fase === "esperando"
+                    ? 'Mesa ' + (dados.modo || '') + ': ' + (dados.assentosOcupados || 0) + ' de ' +
+                      (dados.jogadoresPorMesa || 0) + ' jogadores. Faltam ' + faltam + '.'
+                    : '';
             }
         }
 
@@ -977,7 +817,7 @@
                 elemento('vazaMesa').innerHTML = '';
                 elemento('centroVaza').innerHTML = '';
                 elemento('resultadoGeral').hidden = true;
-                elemento('alertaMesa').hidden = true;
+                elemento('cardPedido').style.display = 'none';
                 return;
             }
 
@@ -993,7 +833,6 @@
             renderizarMinhaMao(dados);
             renderizarPedido(dados);
             renderizarAcoes(dados);
-            renderizarTimes(dados);
             renderizarResultado(dados);
             renderizarHistorico(dados);
             renderizarPresenca(dados);
@@ -1014,7 +853,7 @@
             const restante = Math.max(0, Math.ceil((prazoFase - Date.now()) / 1000));
 
             elemento('contador').textContent = restante;
-            elemento('alertaTempo').textContent = restante;
+            elemento('tempoPedido').textContent = restante;
             elemento('barraFase').style.width = Math.max(0, Math.min(100, (restante / 20) * 100)) + '%';
         }
 
@@ -1035,7 +874,7 @@
             if (dados.fase === "esperando") {
                 alvo = elemento('cardEntrar').style.display === 'block' ? elemento('cardEntrar') : null;
             } else if (dados.pedido) {
-                alvo = elemento('alertaMesa');
+                alvo = elemento('cardPedido');
             } else if (dados.minhaVez) {
                 alvo = elemento('wrapMao');
             } else if (dados.fase === "resultado" || dados.fase === "fim") {
@@ -1164,12 +1003,8 @@
             chamar('/front/api/truco/sala/truco', { acao: acao });
         }
 
-        function entrarNaMesa(equipe) {
-            chamar('/front/api/truco/sala/entrar', { equipe: equipe });
-        }
-
-        function marcarTime(corpo) {
-            chamar('/front/api/truco/sala/time', corpo);
+        function entrarNaMesa() {
+            chamar('/front/api/truco/sala/entrar', {});
         }
 
         function novaPartida() {
@@ -1319,6 +1154,7 @@
 
         elemento('btnCriarSala').addEventListener('click', criarSala);
         elemento('btnNovaSala').addEventListener('click', criarSala);
+        elemento('btnEntrar').addEventListener('click', entrarNaMesa);
         elemento('btnNovaPartida').addEventListener('click', novaPartida);
         elemento('btnCopiarLink').addEventListener('click', copiarLink);
         elemento('btnChatFlutuante').addEventListener('click', abrirChat);

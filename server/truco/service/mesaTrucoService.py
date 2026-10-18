@@ -249,14 +249,10 @@ class MesaTrucoService:
                 partida = self.__salvar(partida.getId(), "jogando",
                                         agora + timedelta(seconds=DURACAO_RESPOSTA), estado)
             else:
-                self.__votarTruco(estado, acao, idJogador)
+                self.__responderTruco(estado, acao, idJogador)
 
                 if mao["finalizada"]:
                     partida = self.__finalizarMao(partida, agora)
-                elif mao.get("pedido"):
-                    # ainda esperando os votos do time: mantém o prazo que já estava correndo
-                    partida = self.__salvar(partida.getId(), "jogando",
-                                            partida.getDataHoraFimFase(), estado)
                 else:
                     partida = self.__salvar(partida.getId(), "jogando",
                                             agora + timedelta(seconds=DURACAO_JOGADA), estado)
@@ -328,8 +324,9 @@ class MesaTrucoService:
             pendente = bool(mao.get("pedido")) and mao["pedido"].get("aceito") is None
 
             if pendente:
-                self.__votarTruco(estado, "aceitar", automatico=True)
+                self.__responderTruco(estado, "aceitar", automatico=True)
                 fimFase = agora + timedelta(seconds=DURACAO_JOGADA)
+                estado["mensagem"] = "O tempo de resposta acabou: o truco foi aceito automaticamente."
             else:
                 idJogador = self.__jogadorDoTurno(estado)
                 cartas = mao["maos"].get(idJogador) or []
@@ -590,94 +587,43 @@ class MesaTrucoService:
             "valor": proximo,
             "anterior": mao["valor"],
             "por": idJogador,
-            "porNome": self.__nomeDe(idJogador),
-            "votos": {}
+            "porNome": self.__nomeDe(idJogador)
         }
-        estado["mensagem"] = (f"{self.__nomeDe(idJogador)} pediu {self.__nomeDoPedido(proximo)}! "
-                              f"O outro time precisa votar: todos aceitando vale {proximo} pontos.")
+        estado["mensagem"] = f"{self.__nomeDe(idJogador)} pediu {self.__nomeDoPedido(proximo)}!"
 
-    def __votarTruco(self, estado, acao, idJogador=None, automatico=False):
-        """Voto de quem responde o truco. Empate na votação: decide o dono do time."""
+    def __responderTruco(self, estado, acao, idJogador=None, automatico=False):
         mao = estado["mao"]
         pedido = mao.get("pedido")
 
-        if not pedido or pedido.get("aceito") is not None:
-            raise Exception("Não há truco esperando resposta")
+        if not pedido:
+            raise Exception("Não há truco para responder")
 
         equipes = self.__equipePorJogador(estado)
         minhaEquipe = equipes.get(idJogador) if idJogador else None
-        respondentes = self.__outraEquipe(pedido["equipe"])
-        membros = [str(item) for item in estado["times"][respondentes]["jogadores"]]
 
-        if automatico:
-            # o tempo acabou sem votação: vale o aceite para a mesa não travar
-            estado["mensagem"] = "O tempo de resposta acabou: o truco foi aceito automaticamente."
-            self.__resolverTruco(estado, pedido, "aceitar")
-            return
+        if not automatico and minhaEquipe is None:
+            raise Exception("Você não está nesta mesa")
 
-        if minhaEquipe != respondentes:
-            raise Exception("Quem pediu o truco não responde: quem decide é o outro time")
+        if not automatico and minhaEquipe == pedido["equipe"]:
+            raise Exception("Quem pediu o truco não responde: espere o outro time")
 
-        votos = pedido.setdefault("votos", {})
-        votos[str(idJogador)] = acao
-
-        capitao = membros[0] if membros else None
-        escolhas = set(votos.values())
-        decisao = None
-
-        if len(votos) >= len(membros) and escolhas == {"aceitar"}:
-            decisao = "aceitar"
-        elif len(votos) >= len(membros):
-            # divergência (ou time todo votando igual): a palavra final é do dono do time
-            decisao = votos.get(capitao) or "aceitar"
-        elif len(escolhas) > 1 and capitao in votos:
-            decisao = votos[capitao]
-
-        if decisao is None:
-            estado["mensagem"] = self.__mensagemVotos(estado, pedido, votos, membros, capitao)
-            return
-
-        self.__resolverTruco(estado, pedido, decisao, donoDoTime=capitao in votos)
-
-    def __mensagemVotos(self, estado, pedido, votos, membros, capitao):
-        time = estado["times"][self.__outraEquipe(pedido["equipe"])]
-        votaram = ", ".join(
-            f"{self.__nomeDe(idJogador)}: {self.__nomeDoVoto(voto)}" for idJogador, voto in votos.items()
-        )
-        faltam = len(membros) - len(votos)
-
-        return (f"{time['nome']} está votando o {self.__nomeDoPedido(pedido['valor'])}"
-                + (f" ({votaram})." if votaram else ".")
-                + (f" Faltam {faltam} voto(s)." if faltam > 0 else "")
-                + (f" Empate na votação: decide {self.__nomeDe(capitao)}." if capitao else ""))
-
-    def __resolverTruco(self, estado, pedido, decisao, donoDoTime=False):
-        mao = estado["mao"]
-        equipePediu = pedido["equipe"]
-        nomePediu = estado["times"][equipePediu]["nome"]
-        nomeRespondeu = estado["times"][self.__outraEquipe(equipePediu)]["nome"]
-        detalhe = " (decisão do dono do time)" if donoDoTime else ""
-        pedido["aceito"] = decisao == "aceitar"
+        pedido["aceito"] = acao == "aceitar"
 
         if pedido["aceito"]:
             mao["valor"] = pedido["valor"]
-            mao["pediu"] = equipePediu
+            mao["pediu"] = pedido["equipe"]
             mao["pedido"] = None
-            estado["mensagem"] = (f"Truco aceito pelo {nomeRespondeu}{detalhe}! "
-                                  f"Esta mão agora vale {mao['valor']} pontos.")
+            estado["mensagem"] = f"Truco aceito! Esta mão agora vale {mao['valor']} pontos."
             return
 
-        mao["vencedor"] = equipePediu
+        # correu: quem pediu leva a mão pelo valor que estava valendo antes do aumento
+        mao["vencedor"] = pedido["equipe"]
         mao["valorGanho"] = pedido["anterior"]
-        mao["desistiu"] = self.__outraEquipe(equipePediu)
+        mao["desistiu"] = equipes.get(str(idJogador)) if idJogador else self.__outraEquipe(pedido["equipe"])
         mao["finalizada"] = True
         mao["revelada"] = True
-        estado["mensagem"] = (f"{nomeRespondeu} correu do truco{detalhe}: "
-                              f"{nomePediu} leva a mão valendo {pedido['anterior']}.")
-
-    @staticmethod
-    def __nomeDoVoto(acao):
-        return "aceitar" if acao == "aceitar" else "correr"
+        estado["mensagem"] = (f"{self.__outraEquipe(pedido['equipe'])} correu do truco: "
+                              f"{pedido['equipe']} leva a mão valendo {pedido['anterior']}.")
 
     # ------------------------------------------------------------- apoio
 
@@ -848,14 +794,10 @@ class MesaTrucoService:
 
     @staticmethod
     def __equipePorJogador(estado):
-        """Equipe de cada jogador, tirada dos times montados na sala."""
-        equipes = {}
-
-        for time in ("A", "B"):
-            for idJogador in (estado.get("times", {}).get(time, {}).get("jogadores") or []):
-                equipes[str(idJogador)] = time
-
-        return equipes
+        return {
+            str(idJogador): regras.EQUIPES[posicao % 2]
+            for posicao, idJogador in enumerate(estado.get("assentos") or [])
+        }
 
     @staticmethod
     def __outraEquipe(equipe):
@@ -1030,11 +972,7 @@ class MesaTrucoService:
             "valorMao": mao.get("valor") if mao else None,
             "ferro": bool(mao and mao.get("ferro")),
             "minhaEquipe": minhaEquipe,
-            "times": self.__dictTimes(estado, idUsuario),
-            "nomesEquipes": self.__nomesEquipes(estado),
-            "jogadoresPorTime": self.__porTime(estado),
-            "mesaPronta": self.__mesaPronta(estado),
-            "podeEntrar": (fase == "esperando" and self.__timeDoJogador(estado, str(idUsuario)) is None),
+            "nomesEquipes": self.__nomesEquipes(assentos, equipes),
             "jogadores": jogadores,
             "minhasCartas": self.__cartasVisiveis(mao, str(idUsuario), idUsuario, revelar) if str(idUsuario) in assentos else [],
             "minhaVez": bool(daVez) and daVez == str(idUsuario),
@@ -1044,7 +982,7 @@ class MesaTrucoService:
             "maoDecidida": bool(mao and regras.maoDecidida(mao.get("vazas") or [])),
             "vazasJogadas": len((mao or {}).get("vazas") or []),
             "vazas": (mao or {}).get("vazas") or [],
-            "pedido": self.__dictPedido(estado, mao, minhaEquipe, idUsuario) if pendente else None,
+            "pedido": self.__dictPedido(mao, minhaEquipe) if pendente else None,
             "acoes": self.__acoes(estado, mao, idUsuario, minhaEquipe, pendente, daVez, fase),
             "turno": {
                 "idJogador": daVez,
@@ -1087,68 +1025,29 @@ class MesaTrucoService:
 
         return {idJogador: porEquipe.get(equipe, 0) for idJogador, equipe in equipes.items()}
 
-    def __nomesEquipes(self, estado):
-        """Nome de cada time e quem está nele."""
-        return {
-            time: {
-                "nome": estado["times"][time]["nome"],
-                "pronto": bool(estado["times"][time]["pronto"]),
-                "jogadores": [self.__nomeDe(idJogador) for idJogador in estado["times"][time]["jogadores"]]
-            }
-            for time in ("A", "B")
-        }
+    def __nomesEquipes(self, assentos, equipes):
+        nomes = {"A": [], "B": []}
 
-    def __dictTimes(self, estado, idUsuario):
-        porTime = self.__porTime(estado)
-        meuTime = self.__timeDoJogador(estado, str(idUsuario))
-        dados = {}
+        for idJogador in assentos:
+            equipe = equipes.get(idJogador)
+            nome = self.__nomeDe(idJogador)
 
-        for time in ("A", "B"):
-            info = estado["times"][time]
-            membros = [str(item) for item in info["jogadores"]]
-            dados[time] = {
-                "nome": info["nome"],
-                "pronto": bool(info["pronto"]),
-                "completo": len(membros) >= porTime,
-                "faltam": max(0, porTime - len(membros)),
-                "jogadores": [self.__nomeDe(idJogador) for idJogador in membros],
-                "meu": time == meuTime,
-                "capitao": self.__nomeDe(membros[0]) if membros else None,
-                "euSouCapitao": bool(meuTime == time and membros and membros[0] == str(idUsuario))
-            }
+            if equipe and nome:
+                nomes[equipe].append(nome)
 
-        return dados
+        return nomes
 
-    def __dictPedido(self, estado, mao, minhaEquipe, idUsuario):
+    @staticmethod
+    def __dictPedido(mao, minhaEquipe):
         pedido = mao["pedido"]
-        votos = pedido.get("votos") or {}
-        respondentes = self.__outraEquipe(pedido["equipe"])
-        membros = [str(item) for item in estado["times"][respondentes]["jogadores"]]
-        capitao = membros[0] if membros else None
-        souRespondente = bool(minhaEquipe) and minhaEquipe == respondentes
 
         return {
             "equipe": pedido["equipe"],
-            "nomeEquipe": estado["times"][pedido["equipe"]]["nome"],
             "valor": pedido["valor"],
             "anterior": pedido["anterior"],
             "porNome": pedido.get("porNome"),
             "meu": pedido["equipe"] == minhaEquipe,
-            "souRespondente": souRespondente,
-            "podeVotar": souRespondente and str(idUsuario) not in votos,
-            "meuVoto": votos.get(str(idUsuario)),
-            "souCapitao": bool(souRespondente and capitao and str(idUsuario) == capitao),
-            "capitaoNome": self.__nomeDe(capitao) if capitao else None,
-            "faltamVotar": max(0, len(membros) - len(votos)),
-            "nomeTimeRespondendo": estado["times"][respondentes]["nome"],
-            "votos": [
-                {
-                    "nome": self.__nomeDe(idJogador),
-                    "voto": votos.get(idJogador),
-                    "capitao": idJogador == capitao
-                }
-                for idJogador in membros
-            ]
+            "podeResponder": pedido["equipe"] != minhaEquipe
         }
 
     @staticmethod
@@ -1161,15 +1060,13 @@ class MesaTrucoService:
         if mao and not mao.get("finalizada") and fase == "jogando" and minhaEquipe:
             if pendente:
                 pedido = mao["pedido"]
-                outroTime = MesaTrucoService.__outraEquipe(pedido["equipe"])
-                votos = pedido.get("votos") or {}
-                podeResponder = minhaEquipe == outroTime and str(idUsuario) not in votos
-                valorResponder = pedido["valor"]
+                podeResponder = pedido["equipe"] != minhaEquipe
+                valorResponder = pedido["anterior"]
             else:
                 proximo = regras.permiteTruco(mao["tipo"], mao["valor"])
                 podePedir = bool(
                     proximo is not None
-                    and MesaTrucoService.__timeDoJogador(estado, daVez) == minhaEquipe
+                    and MesaTrucoService.__equipeDoJogador(estado, daVez) == minhaEquipe
                     and mao.get("pediu") != minhaEquipe
                 )
 
@@ -1180,6 +1077,15 @@ class MesaTrucoService:
             "podeResponder": podeResponder,
             "valorResponder": valorResponder
         }
+
+    @staticmethod
+    def __equipeDoJogador(estado, idJogador):
+        assentos = [str(item) for item in (estado.get("assentos") or [])]
+
+        if idJogador is None or str(idJogador) not in assentos:
+            return None
+
+        return regras.EQUIPES[assentos.index(str(idJogador)) % 2]
 
     @staticmethod
     def __dictResultado(resultado, minhaEquipe):
