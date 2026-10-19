@@ -66,13 +66,13 @@ class MesaTrucoService:
             sala = self.__salaRepo.criar(nome[:60], modo, usuario.getId(), agora,
                                          agora + timedelta(minutes=DURACAO_SALA_MINUTOS))
             estado = self.__novoEstado(sala)
-            self.__assentar(estado, usuario, "A")
+            self.__assentar(estado, usuario)
             self.__partidaRepo.criar(sala.getId(), "esperando", agora,
                                      agora + timedelta(minutes=DURACAO_SALA_MINUTOS), estado)
 
         return {
             "sala": self.__dictSala(sala),
-            "mensagem": f"Sala {modo} criada! Você é o capitão do seu time. O link vale por {DURACAO_SALA_MINUTOS} minutos."
+            "mensagem": f"Sala {modo} criada! O link vale por {DURACAO_SALA_MINUTOS} minutos."
         }
 
     def entrar(self, req: dict):
@@ -91,9 +91,8 @@ class MesaTrucoService:
                 raise Exception("Esta partida já começou. Espere a próxima para entrar.")
 
             estado = partida.getEstado()
-            self.__assentar(estado, usuario, req.get("equipe"))
+            self.__assentar(estado, usuario)
             partida = self.__salvar(partida.getId(), "esperando", partida.getDataHoraFimFase(), estado)
-            partida = self.__avancar(partida, agoraBrasiliaData())
 
         return self.__montarEstado(sala, partida, idUsuario, req.get("desdeChat", 0))
 
@@ -282,7 +281,7 @@ class MesaTrucoService:
         if fase == "esperando":
             estado = partida.getEstado()
 
-            if not self.__mesaPronta(estado):
+            if len(estado.get("assentos") or []) < estado.get("jogadoresPorMesa", 4):
                 return partida
 
             return self.__iniciarMao(partida, agora)
@@ -354,7 +353,7 @@ class MesaTrucoService:
         estado = partida.getEstado()
         assentos = estado.get("assentos") or []
 
-        if not assentos or not self.__mesaPronta(estado):
+        if len(assentos) < estado.get("jogadoresPorMesa", 4):
             return partida
 
         estado["numeroMao"] = int(estado.get("numeroMao") or 0) + 1
@@ -631,10 +630,6 @@ class MesaTrucoService:
         return {
             "modo": sala.getModo(),
             "jogadoresPorMesa": sala.getJogadoresPorMesa(),
-            "times": {
-                "A": {"nome": "Time A", "pronto": False, "jogadores": []},
-                "B": {"nome": "Time B", "pronto": False, "jogadores": []}
-            },
             "assentos": [],
             "pontos": {"A": 0, "B": 0},
             "maosGanhas": {"A": 0, "B": 0},
@@ -642,155 +637,24 @@ class MesaTrucoService:
             "mao": None,
             "resultado": None,
             "historico": [],
-            "mensagem": "Mesa criada! Dê um nome ao seu time e mande o link."
+            "mensagem": "Mesa criada! Mande o link para os jogadores entrarem."
         }
 
-    # ------------------------------------------------------------- times
-
-    def marcarTime(self, req: dict):
-        """Troca o nome do time e marca/desmarca o time como pronto para começar."""
-        idUsuario = self.__converterId(req.get("idUsuario"))
-
-        if idUsuario is None:
-            raise Exception("Usuário inválido")
-
-        with CADEADO_MESA:
-            sala = self.__sala(req.get("codigo"))
-            agora = agoraBrasiliaData()
-            partida = self.__avancar(self.__partidaAtual(sala), agora)
-
-            if partida.getFase() != "esperando":
-                raise Exception("A partida já começou. Espere a próxima para mexer no time.")
-
-            estado = partida.getEstado()
-            time = self.__timeDoJogador(estado, str(idUsuario))
-
-            if time is None:
-                raise Exception("Você ainda não está em um time")
-
-            dados = estado["times"][time]
-            nome = req.get("nome")
-            pronto = req.get("pronto")
-
-            if nome is not None:
-                nome = " ".join(str(nome).split())
-
-                if not nome:
-                    raise Exception("Digite um nome para o time")
-
-                if len(nome) > 20:
-                    raise Exception("Nome do time muito longo (máximo 20 caracteres)")
-
-                dados["nome"] = nome
-                estado["mensagem"] = f"Time renomeado para {nome}."
-
-            if pronto is not None:
-                querPronto = bool(pronto)
-                porTime = self.__porTime(estado)
-
-                if querPronto and len(dados["jogadores"]) < porTime:
-                    raise Exception(f"Faltam jogadores no seu time ({len(dados['jogadores'])}/{porTime})")
-
-                dados["pronto"] = querPronto
-                estado["mensagem"] = (f"{dados['nome']} está pronto!" if querPronto
-                                      else f"{dados['nome']} cancelou o pronto.")
-
-            partida = self.__salvar(partida.getId(), "esperando", partida.getDataHoraFimFase(), estado)
-            partida = self.__avancar(partida, agora)
-
-        return self.__montarEstado(sala, partida, idUsuario, req.get("desdeChat", 0))
-
-    @staticmethod
-    def __porTime(estado):
-        return max(1, int(estado.get("jogadoresPorMesa", 4)) // 2)
-
-    @staticmethod
-    def __timeDoJogador(estado, idJogador):
-        if idJogador is None:
-            return None
-
-        for time in ("A", "B"):
-            jogadores = [str(item) for item in (estado.get("times", {}).get(time, {}).get("jogadores") or [])]
-
-            if str(idJogador) in jogadores:
-                return time
-
-        return None
-
-    def __escolherTime(self, estado, equipe):
-        if equipe is not None and str(equipe).strip():
-            time = str(equipe).strip().upper()
-
-            if time not in ("A", "B"):
-                raise Exception("Time inválido")
-
-            return time
-
-        # sem escolha: entra no time com menos gente (A em caso de empate)
-        a = len(estado["times"]["A"]["jogadores"])
-        b = len(estado["times"]["B"]["jogadores"])
-
-        return "A" if a <= b else "B"
-
-    def __mesaPronta(self, estado):
-        porTime = self.__porTime(estado)
-
-        for time in ("A", "B"):
-            dados = estado["times"][time]
-
-            if len(dados["jogadores"]) < porTime or not dados["pronto"]:
-                return False
-
-        return True
-
-    def __assentar(self, estado, usuario, equipe=None):
+    def __assentar(self, estado, usuario):
         idJogador = str(usuario.getId())
 
-        if self.__timeDoJogador(estado, idJogador):
+        if idJogador in estado["assentos"]:
             return
 
-        if self.__jogadoresNaMesa(estado) >= int(estado["jogadoresPorMesa"]):
+        if len(estado["assentos"]) >= estado["jogadoresPorMesa"]:
             raise Exception(f"A mesa está cheia ({estado['jogadoresPorMesa']} jogadores)")
 
-        time = self.__escolherTime(estado, equipe)
-        dados = estado["times"][time]
-        porTime = self.__porTime(estado)
-
-        if len(dados["jogadores"]) >= porTime:
-            raise Exception(f"O {dados['nome']} já está completo")
-
-        if not dados["jogadores"]:
-            dados["nome"] = f"Time de {usuario.getUsuario()}"
-
-        dados["jogadores"].append(idJogador)
-        dados["pronto"] = False
-        self.__reordenarAssentos(estado)
-
-        faltam = porTime - len(dados["jogadores"])
-        estado["mensagem"] = (f"{usuario.getUsuario()} entrou no {dados['nome']}. "
-                              + ("Falta 1 jogador nesse time." if faltam == 1
-                                 else (f"Faltam {faltam} jogadores nesse time." if faltam > 0
-                                       else "Time completo: é só marcar pronto.")))
-
-    @staticmethod
-    def __jogadoresNaMesa(estado):
-        return sum(len(estado["times"][time]["jogadores"]) for time in ("A", "B"))
-
-    @staticmethod
-    def __reordenarAssentos(estado):
-        """Cadeiras intercaladas (A, B, A, B): parceiros ficam um de frente para o outro."""
-        a = [str(item) for item in estado["times"]["A"]["jogadores"]]
-        b = [str(item) for item in estado["times"]["B"]["jogadores"]]
-        ordem = []
-
-        for indice in range(max(len(a), len(b))):
-            if indice < len(a):
-                ordem.append(a[indice])
-
-            if indice < len(b):
-                ordem.append(b[indice])
-
-        estado["assentos"] = ordem
+        estado["assentos"].append(idJogador)
+        entrou = len(estado["assentos"])
+        estado["mensagem"] = (f"{usuario.getUsuario()} entrou na mesa "
+                             f"({entrou}/{estado['jogadoresPorMesa']}). " +
+                             ("Cartas na mesa!" if entrou >= estado["jogadoresPorMesa"]
+                              else "Aguardando os outros jogadores..."))
 
     @staticmethod
     def __equipePorJogador(estado):
